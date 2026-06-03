@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 import { NavBar } from "@/components/NavBar";
 
 export const metadata: Metadata = {
-  title: "Resume Parser — UAT Console",
-  description: "API key management and resume-parser testing console",
+  title: "Blue-IQ Parser — API Playground",
+  description: "Test the résumé-parsing API with your API key, just like a real consumer.",
 };
 
 export default function RootLayout({

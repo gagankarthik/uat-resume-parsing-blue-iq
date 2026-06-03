@@ -82,29 +82,6 @@ export interface JobStatusResponse {
   error: string | null;
 }
 
-// ── API-key admin ─────────────────────────────────────────────────────────────
-
-export interface ApiKey {
-  key_hash: string;
-  key_prefix: string;
-  company_id: string;
-  status: string; // "active" | "revoked"
-  rate_limit_per_minute: number;
-  rate_limit_per_day: number;
-  created_at: string;
-}
-
-export interface CreateApiKeyRequest {
-  company_id: string;
-  rate_limit_per_minute?: number;
-  rate_limit_per_day?: number;
-}
-
-// Returned ONCE on creation — includes the raw key, shown to the operator once.
-export interface CreateApiKeyResponse extends ApiKey {
-  api_key: string;
-}
-
 export interface ApiErrorBody {
   error: { status_code?: number; error_code?: string; detail: string; hint?: string; request_id?: string };
 }
