@@ -18,6 +18,31 @@ export interface Experience {
   end_date: string | null;
   is_current: boolean | null;
   location: string | null;
+  // Structured facility location (Edit Work History form)
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  zip_code?: string | null;
+  // Clinical classification
+  profession?: string | null;
+  specialties?: string[];
+  // Facility attributes
+  service_type?: string | null;
+  nurse_to_patient_ratio?: string | null;
+  facility_beds?: string | null;
+  beds_in_unit?: string | null;
+  teaching_facility?: string | null;
+  magnet_facility?: string | null;
+  trauma_facility?: string | null;
+  trauma_level?: string | null;
+  additional_info?: string | null;
+  // Position details
+  position_held?: string | null;
+  agency_name?: string | null;
+  charge_experience?: string | null;
+  charting_system?: string | null;
+  shift?: string | null;
+  reason_for_leaving?: string | null;
   description: string[]; // one item per responsibility/bullet
   achievements: string[];
 }

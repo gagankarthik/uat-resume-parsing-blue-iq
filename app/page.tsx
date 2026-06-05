@@ -4,13 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ResumeResult } from "@/components/ResumeResult";
 import { getJobStatus, parseResume } from "@/lib/api";
-import { DEFAULT_BASE_URL, getSettings, saveSettings } from "@/lib/settings";
 import { ApiError, type JobStatusResponse, type ParseResponse } from "@/lib/types";
 
 type Result = ParseResponse | JobStatusResponse;
 
 const ACCEPT = ".pdf,.docx,.png,.jpg,.jpeg,.tiff,.tif,.webp";
-const STAGES = ["Uploading file…", "Extracting text…", "Structuring with AI…", "Finalizing…"];
+const FORMATS = ["PDF", "DOCX", "PNG", "JPG", "TIFF", "WEBP"];
+const STAGES = ["Uploading file", "Extracting text", "Structuring with AI", "Finalizing"];
 
 type Phase = "idle" | "parsing" | "done" | "error";
 
@@ -26,10 +26,6 @@ function humanSize(b: number): string {
 }
 
 export default function Home() {
-  const [apiKey, setApiKey] = useState("");
-  const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
-  const [showKey, setShowKey] = useState(false);
-
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -38,16 +34,10 @@ export default function Home() {
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const s = getSettings();
-    setApiKey(s.apiKey);
-    setBaseUrl(s.apiBaseUrl);
-  }, []);
-
-  // Cycle the loader status text while parsing.
+  // Advance the loader stages forward, holding on the last one until the result lands.
   useEffect(() => {
     if (phase !== "parsing") return;
-    const id = setInterval(() => setStage((s) => (s + 1) % STAGES.length), 1400);
+    const id = setInterval(() => setStage((s) => Math.min(s + 1, STAGES.length - 1)), 1500);
     return () => clearInterval(id);
   }, [phase]);
 
@@ -63,9 +53,8 @@ export default function Home() {
 
   const run = useCallback(
     async (f: File) => {
-      // API key is optional here — the server proxy supplies it from .env when
-      // RESUME_PARSER_API_KEY is set. A missing key surfaces as a 401 from the API.
-      saveSettings({ apiBaseUrl: baseUrl.trim() || DEFAULT_BASE_URL, apiKey: apiKey.trim() });
+      // The API base URL and key live entirely on the server (NEXT_PUBLIC_API_BASE_URL
+      // and RESUME_PARSER_API_KEY) — the proxy attaches them. Nothing to collect here.
       setError("");
       setResult(null);
       setStage(0);
@@ -80,7 +69,7 @@ export default function Home() {
         setPhase("error");
       }
     },
-    [apiKey, baseUrl, poll],
+    [poll],
   );
 
   function pick(f: File | null) {
@@ -109,50 +98,37 @@ export default function Home() {
 
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">Résumé Parser</h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          Drop a résumé — the API turns it into structured JSON you can download.
-        </p>
-      </div>
-
-      {/* API key */}
-      <div className="mb-5 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">API key</label>
-        <div className="flex gap-2">
-          <input
-            type={showKey ? "text" : "password"}
-            value={apiKey}
-            placeholder="rp_live_…"
-            onChange={(e) => setApiKey(e.target.value)}
-            onBlur={() => saveSettings({ apiBaseUrl: baseUrl.trim() || DEFAULT_BASE_URL, apiKey: apiKey.trim() })}
-            className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 font-mono text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-950"
-          />
-          <button
-            onClick={() => setShowKey((v) => !v)}
-            className="shrink-0 rounded-lg border border-zinc-300 px-3 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          >
-            {showKey ? "Hide" : "Show"}
-          </button>
-        </div>
-        <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-          Sent as <code className="font-mono">X-API-Key</code>, stored only in your browser. Leave blank to use the
-          server&apos;s <code className="font-mono">.env</code> key (<code className="font-mono">RESUME_PARSER_API_KEY</code>).
+      {/* Hero */}
+      <div className="mb-10 text-center">
+        <span
+          className="reveal inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--bg-elev)]/60 px-3 py-1 text-xs font-medium text-[var(--muted)] backdrop-blur"
+          style={{ animationDelay: "0ms" }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+          Healthcare résumé extraction
+        </span>
+        <h1
+          className="reveal mt-5 font-display text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl"
+          style={{ animationDelay: "80ms" }}
+        >
+          Résumé <span className="text-gradient italic">to structured JSON</span>
+        </h1>
+        <p
+          className="reveal mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-[var(--muted)]"
+          style={{ animationDelay: "160ms" }}
+        >
+          Drop a résumé and the parser returns clean, reviewable fields — exactly what a
+          client integration receives.
         </p>
       </div>
 
       {/* Dropzone / loader / result */}
       {phase === "parsing" ? (
-        <Loader filename={file?.name} stage={STAGES[stage]} />
+        <Loader filename={file?.name} stageIndex={stage} />
       ) : phase === "done" && result ? (
-        <ResultView
-          filename={file?.name}
-          result={result}
-          onDownload={download}
-          onReset={reset}
-        />
+        <ResultView filename={file?.name} result={result} onDownload={download} onReset={reset} />
       ) : (
-        <>
+        <div className="reveal" style={{ animationDelay: "240ms" }}>
           <div
             role="button"
             tabIndex={0}
@@ -169,17 +145,36 @@ export default function Home() {
               pick(e.dataTransfer.files?.[0] ?? null);
             }}
             className={
-              "flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-16 text-center transition-colors " +
+              "group relative flex cursor-pointer flex-col items-center justify-center overflow-visible rounded-3xl border bg-[var(--bg-elev)]/70 px-6 py-16 text-center shadow-xl shadow-black/5 backdrop-blur-md transition-all duration-300 " +
               (drag
-                ? "border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/30"
-                : "border-zinc-300 bg-white hover:border-indigo-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800/50")
+                ? "ring-glow scale-[1.01] border-transparent"
+                : "border-[var(--line)] hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-teal-500/10")
             }
           >
-            <UploadGlyph />
-            <p className="mt-4 text-base font-medium">
-              {drag ? "Drop to parse" : "Drag & drop a résumé"}
+            <div className="relative">
+              {drag && <span className="pulse-ring rounded-full" />}
+              <UploadGlyph active={drag} />
+            </div>
+            <p className="mt-5 font-display text-xl font-medium tracking-tight">
+              {drag ? "Release to parse" : "Drop your résumé here"}
             </p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">or click to browse · PDF, DOCX, image · up to 10 MB</p>
+            <p className="mt-1.5 text-sm text-[var(--muted)]">
+              or{" "}
+              <span className="font-medium text-teal-600 underline-offset-4 group-hover:underline dark:text-teal-400">
+                browse files
+              </span>{" "}
+              · up to 10 MB
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-1.5">
+              {FORMATS.map((f) => (
+                <span
+                  key={f}
+                  className="rounded-md border border-[var(--line)] bg-[var(--bg)]/60 px-2 py-0.5 font-mono text-[10px] font-medium tracking-wide text-[var(--muted)]"
+                >
+                  {f}
+                </span>
+              ))}
+            </div>
             <input
               ref={inputRef}
               type="file"
@@ -188,38 +183,86 @@ export default function Home() {
               onChange={(e) => pick(e.target.files?.[0] ?? null)}
             />
           </div>
+
           {error && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+            <div className="pop-in mt-4 flex items-start gap-2.5 rounded-xl border border-red-300/70 bg-red-50/80 px-4 py-3 text-sm text-red-700 backdrop-blur dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+              <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
+                <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
               {error}
             </div>
           )}
-          {file && (
-            <p className="mt-3 text-center text-xs text-zinc-500">
-              Last file: {file.name} · {humanSize(file.size)}
+          {file && !error && (
+            <p className="mt-3 text-center text-xs text-[var(--muted)]">
+              Last file: <span className="font-medium">{file.name}</span> · {humanSize(file.size)}
             </p>
           )}
-        </>
+        </div>
       )}
     </div>
   );
 }
 
-function Loader({ filename, stage }: { filename?: string; stage: string }) {
+function Loader({ filename, stageIndex }: { filename?: string; stageIndex: number }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-10 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mx-auto flex max-w-xs flex-col items-center text-center">
+    <div className="pop-in rounded-3xl border border-[var(--line)] bg-[var(--bg-elev)]/70 p-10 shadow-xl shadow-black/5 backdrop-blur-md">
+      <div className="mx-auto flex max-w-sm flex-col items-center">
         {/* Animated document scan */}
-        <div className="animate-shimmer relative h-24 w-20 overflow-hidden rounded-md border-2 border-indigo-300 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950/40">
-          <div className="space-y-1.5 p-2.5">
-            {[10, 14, 8, 12, 9].map((w, i) => (
-              <div key={i} className="h-1.5 rounded bg-indigo-200 dark:bg-indigo-800" style={{ width: `${w * 6}%` }} />
+        <div className="animate-shimmer animate-float relative h-28 w-22 overflow-hidden rounded-lg border border-teal-300/70 bg-gradient-to-b from-teal-50 to-white shadow-lg shadow-teal-500/10 dark:border-teal-800/70 dark:from-teal-950/40 dark:to-zinc-900">
+          <div className="space-y-2 p-3">
+            {[14, 10, 13, 8, 12, 9].map((w, i) => (
+              <div
+                key={i}
+                className="h-1.5 rounded-full bg-teal-200/80 dark:bg-teal-800/70"
+                style={{ width: `${w * 6}%` }}
+              />
             ))}
           </div>
-          <div className="animate-scan absolute left-1 right-1 h-0.5 rounded bg-indigo-500 shadow-[0_0_8px_2px_rgba(99,102,241,0.6)]" />
+          <div className="animate-scan absolute inset-x-1.5 h-[2px] rounded-full bg-teal-500 shadow-[0_0_10px_2px_rgba(20,184,166,0.7)]" />
         </div>
-        <p className="mt-5 text-base font-medium">Parsing résumé…</p>
-        <p className="mt-1 text-sm text-indigo-600 dark:text-indigo-400">{stage}</p>
-        {filename && <p className="mt-2 truncate text-xs text-zinc-400">{filename}</p>}
+
+        <p className="mt-6 font-display text-lg font-medium tracking-tight">Parsing résumé</p>
+
+        {/* Stage checklist */}
+        <ul className="mt-4 w-full max-w-[15rem] space-y-2">
+          {STAGES.map((s, i) => {
+            const done = i < stageIndex;
+            const active = i === stageIndex;
+            return (
+              <li key={s} className="flex items-center gap-2.5 text-sm">
+                <span
+                  className={
+                    "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-all duration-300 " +
+                    (done
+                      ? "border-teal-500 bg-teal-500 text-white"
+                      : active
+                        ? "border-teal-500 text-teal-600 dark:text-teal-400"
+                        : "border-[var(--line)] text-transparent")
+                  }
+                >
+                  {done ? (
+                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none">
+                      <path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : active ? (
+                    <span className="h-2 w-2 animate-ping rounded-full bg-teal-500" />
+                  ) : (
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  )}
+                </span>
+                <span
+                  className={
+                    done || active ? "text-[var(--fg)]" : "text-[var(--muted)]"
+                  }
+                >
+                  {s}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+
+        {filename && <p className="mt-5 max-w-full truncate text-xs text-[var(--muted)]">{filename}</p>}
       </div>
     </div>
   );
@@ -239,46 +282,71 @@ function ResultView({
   const [copied, setCopied] = useState(false);
   const json = JSON.stringify(result.data ?? result, null, 2);
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Parsed
+    <div className="pop-in rounded-3xl border border-[var(--line)] bg-[var(--bg-elev)]/80 p-5 shadow-xl shadow-black/5 backdrop-blur-md sm:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-500 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-500" />
+            </span>
+            Parsed
           </span>
-          {filename && <span className="truncate text-xs text-zinc-500">{filename}</span>}
+          {filename && <span className="truncate text-xs text-[var(--muted)]">{filename}</span>}
         </div>
         <div className="flex gap-2">
-          <button
+          <ToolbarButton
             onClick={async () => {
               await navigator.clipboard.writeText(json);
               setCopied(true);
               setTimeout(() => setCopied(false), 1500);
             }}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
           >
             {copied ? "Copied ✓" : "Copy"}
+          </ToolbarButton>
+          <button
+            onClick={onDownload}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-md shadow-teal-500/20 transition-all hover:shadow-lg hover:shadow-teal-500/30 active:scale-95"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+              <path d="M12 4v11m0 0 4-4m-4 4-4-4M5 20h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            JSON
           </button>
-          <button onClick={onDownload} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500">
-            Download JSON
-          </button>
-          <button onClick={onReset} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800">
-            Parse another
-          </button>
+          <ToolbarButton onClick={onReset}>Parse another</ToolbarButton>
         </div>
       </div>
       {result.data ? (
         <ResumeResult data={result.data} confidence={result.confidence} skillsValidation={result.skills_validation} />
       ) : (
-        <p className="text-sm text-zinc-500">No parsed data returned.</p>
+        <p className="text-sm text-[var(--muted)]">No parsed data returned.</p>
       )}
     </div>
   );
 }
 
-function UploadGlyph() {
+function ToolbarButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return (
-    <div className="grid h-14 w-14 place-items-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <button
+      onClick={onClick}
+      className="rounded-lg border border-[var(--line)] bg-[var(--bg-elev)] px-3 py-1.5 text-sm font-medium text-[var(--fg)] transition-colors hover:border-teal-400 hover:text-teal-600 active:scale-95 dark:hover:text-teal-400"
+    >
+      {children}
+    </button>
+  );
+}
+
+function UploadGlyph({ active }: { active: boolean }) {
+  return (
+    <div
+      className={
+        "relative grid h-16 w-16 place-items-center rounded-2xl transition-all duration-300 " +
+        (active
+          ? "scale-110 bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/30"
+          : "bg-teal-50 text-teal-600 group-hover:scale-105 dark:bg-teal-950/50 dark:text-teal-400")
+      }
+    >
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className={active ? "" : "animate-float"}>
         <path d="M12 16V4m0 0L7 9m5-5 5 5M5 19h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </div>

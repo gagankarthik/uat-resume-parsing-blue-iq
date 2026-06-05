@@ -1,18 +1,19 @@
 // Server-side proxy to the resume-parser API (avoids browser CORS).
-// Target base URL + API key come from the client via headers.
+// The target base URL and API key are read ONLY from server env, so the browser
+// never sees the key:
+//   • NEXT_PUBLIC_API_BASE_URL — base URL of the resume-parser API
+//   • RESUME_PARSER_API_KEY    — sent upstream as X-API-Key
 import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 async function forward(req: NextRequest, path: string[]): Promise<Response> {
-  // .env is authoritative; the client-provided headers (localStorage) are a
-  // fallback so the console still works without server config.
-  const baseUrl = process.env.RESUME_PARSER_API_BASE_URL?.trim() || req.headers.get("x-target-base-url");
-  const apiKey = process.env.RESUME_PARSER_API_KEY?.trim() || req.headers.get("x-api-key") || "";
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  const apiKey = process.env.RESUME_PARSER_API_KEY?.trim() || "";
   if (!baseUrl) {
     return Response.json(
-      { error: { detail: "No API base URL — set RESUME_PARSER_API_BASE_URL in .env.local or enter one in the console." } },
-      { status: 400 },
+      { error: { detail: "Server is missing NEXT_PUBLIC_API_BASE_URL — set it in .env.local and restart." } },
+      { status: 500 },
     );
   }
 

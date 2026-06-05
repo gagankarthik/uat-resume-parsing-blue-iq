@@ -7,7 +7,7 @@
 import { useState } from "react";
 
 import { Badge } from "@/components/ui";
-import type { ConfidenceScores, ParsedResume, SkillsValidation } from "@/lib/types";
+import type { ConfidenceScores, Experience, ParsedResume, SkillsValidation } from "@/lib/types";
 
 function confTone(v: number): "success" | "warning" | "danger" {
   if (v >= 0.8) return "success";
@@ -40,19 +40,69 @@ function Field({ label, value }: { label: string; value: string | null | undefin
   );
 }
 
-function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
+function Section({
+  title,
+  count,
+  delay = 0,
+  children,
+}: {
+  title: string;
+  count?: number;
+  delay?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <section
+      className="reveal border-t border-[var(--line)] pt-4"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+        <span className="h-3.5 w-1 rounded-full bg-gradient-to-b from-teal-400 to-emerald-500" />
         {title}
         {typeof count === "number" && (
-          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+          <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
             {count}
           </span>
         )}
       </h3>
       {children}
     </section>
+  );
+}
+
+// Compact key/value grid for the optional "Edit Work History" fields — only the
+// values the parser actually captured are shown.
+function WorkDetails({ e }: { e: Experience }) {
+  const rows: [string, string | null | undefined][] = [
+    ["Profession", e.profession],
+    ["Position held", e.position_held],
+    ["Shift", e.shift],
+    ["Charting system", e.charting_system],
+    ["Agency", e.agency_name],
+    ["Nurse-to-patient ratio", e.nurse_to_patient_ratio],
+    ["Beds in unit", e.beds_in_unit],
+    ["Facility beds", e.facility_beds],
+    ["Service type", e.service_type],
+    ["Teaching facility", e.teaching_facility],
+    ["Magnet facility", e.magnet_facility],
+    ["Trauma facility", e.trauma_facility],
+    ["Trauma level", e.trauma_level],
+    ["Charge experience", e.charge_experience],
+    ["ZIP code", e.zip_code],
+    ["Reason for leaving", e.reason_for_leaving],
+    ["Additional info", e.additional_info],
+  ];
+  const shown = rows.filter(([, v]) => v);
+  if (shown.length === 0) return null;
+  return (
+    <dl className="mt-2.5 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
+      {shown.map(([label, value]) => (
+        <div key={label} className="flex gap-1.5 text-xs">
+          <dt className="shrink-0 font-medium text-zinc-400">{label}:</dt>
+          <dd className="text-zinc-700 dark:text-zinc-300">{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -83,32 +133,35 @@ export function ResumeResult({
 
   return (
     <div className="space-y-5">
-      {/* Confidence summary */}
-      {confidence && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={confTone(confidence.overall)}>Overall {Math.round(confidence.overall * 100)}%</Badge>
-          <Badge tone={confTone(confidence.personal_info)}>Personal {Math.round(confidence.personal_info * 100)}%</Badge>
-          <Badge tone={confTone(confidence.experience)}>Experience {Math.round(confidence.experience * 100)}%</Badge>
-          <Badge tone={confTone(confidence.education)}>Education {Math.round(confidence.education * 100)}%</Badge>
-          <Badge tone={confTone(confidence.skills)}>Skills {Math.round(confidence.skills * 100)}%</Badge>
-          <button
-            onClick={() => setRaw((v) => !v)}
-            className="ml-auto rounded-lg border border-zinc-300 px-2.5 py-1 text-xs font-medium hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          >
-            {raw ? "Structured view" : "Raw JSON"}
-          </button>
-        </div>
-      )}
+      {/* Confidence summary + view toggle (toggle always available) */}
+      <div className="flex flex-wrap items-center gap-2">
+        {confidence && (
+          <>
+            <Badge tone={confTone(confidence.overall)}>Overall {Math.round(confidence.overall * 100)}%</Badge>
+            <Badge tone={confTone(confidence.personal_info)}>Personal {Math.round(confidence.personal_info * 100)}%</Badge>
+            <Badge tone={confTone(confidence.experience)}>Experience {Math.round(confidence.experience * 100)}%</Badge>
+            <Badge tone={confTone(confidence.education)}>Education {Math.round(confidence.education * 100)}%</Badge>
+            <Badge tone={confTone(confidence.skills)}>Skills {Math.round(confidence.skills * 100)}%</Badge>
+          </>
+        )}
+        <button
+          onClick={() => setRaw((v) => !v)}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--bg-elev)] px-2.5 py-1 text-xs font-medium text-[var(--fg)] transition-colors hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400"
+        >
+          <span className={"h-1.5 w-1.5 rounded-full " + (raw ? "bg-teal-500" : "bg-zinc-400")} />
+          {raw ? "Structured view" : "Raw JSON"}
+        </button>
+      </div>
 
       {raw ? (
-        <pre className="max-h-[34rem] overflow-auto rounded-xl bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-100">
+        <pre className="scroll-fine fade-in max-h-[34rem] overflow-auto rounded-2xl border border-teal-900/40 bg-[#06100e] p-4 font-mono text-xs leading-relaxed text-teal-50 shadow-inner">
           {JSON.stringify(data, null, 2)}
         </pre>
       ) : (
         <div className="space-y-5">
           {/* Personal info */}
           {p && (
-            <Section title="Personal">
+            <Section title="Personal" delay={0}>
               <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Full name" value={p.full_name} />
                 <Field label="Phone" value={p.phone} />
@@ -117,28 +170,37 @@ export function ResumeResult({
                 <Field label="LinkedIn" value={p.linkedin_url} />
                 <Field label="Portfolio" value={p.portfolio_url} />
               </dl>
-              {p.summary && <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">{p.summary}</p>}
+              {p.summary && <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{p.summary}</p>}
             </Section>
           )}
 
           {/* Experience */}
-          <Section title="Experience" count={data.experience.length}>
+          <Section title="Experience" count={data.experience.length} delay={60}>
             {data.experience.length === 0 ? (
               <p className="text-sm text-zinc-400">— none —</p>
             ) : (
-              <ol className="space-y-4">
+              <ol className="space-y-3">
                 {data.experience.map((e, i) => (
-                  <li key={i} className="rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800">
+                  <li
+                    key={i}
+                    className="rounded-2xl border border-[var(--line)] bg-[var(--bg)]/40 p-4 transition-colors hover:border-teal-300/70 dark:hover:border-teal-800/70"
+                  >
                     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                       <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {e.role || "—"} <span className="font-normal text-zinc-500">· {e.company || "—"}</span>
+                        {e.role || "—"} <span className="font-normal text-[var(--muted)]">· {e.company || "—"}</span>
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="font-mono text-xs text-[var(--muted)]">
                         {fmtDate(e.start_date)} – {fmtDate(e.end_date)}
-                        {e.is_current && <span className="ml-1 text-green-600 dark:text-green-400">· current</span>}
+                        {e.is_current && <span className="ml-1 font-sans text-teal-600 dark:text-teal-400">· current</span>}
                       </p>
                     </div>
                     {e.location && <p className="mt-0.5 text-xs text-zinc-500">{e.location}</p>}
+                    {e.specialties && e.specialties.length > 0 && (
+                      <div className="mt-2">
+                        <Chips items={e.specialties} tone="info" />
+                      </div>
+                    )}
+                    <WorkDetails e={e} />
                     {e.description.length > 0 && (
                       <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300">
                         {e.description.map((d, j) => (
@@ -160,7 +222,7 @@ export function ResumeResult({
           </Section>
 
           {/* Education */}
-          <Section title="Education" count={data.education.length}>
+          <Section title="Education" count={data.education.length} delay={120}>
             {data.education.length === 0 ? (
               <p className="text-sm text-zinc-400">— none —</p>
             ) : (
@@ -184,11 +246,14 @@ export function ResumeResult({
           </Section>
 
           {/* Skills */}
-          <Section title="Skills" count={data.skills.length}>
+          <Section title="Skills" count={data.skills.length} delay={180}>
             <Chips items={data.skills} tone="info" />
             {skillsValidation && (
-              <p className="mt-2 text-xs text-zinc-500">
-                {skillsValidation.recognized_count}/{skillsValidation.total} recognized in healthcare taxonomy
+              <p className="mt-2.5 text-xs text-[var(--muted)]">
+                <span className="font-semibold text-teal-600 dark:text-teal-400">
+                  {skillsValidation.recognized_count}/{skillsValidation.total}
+                </span>{" "}
+                recognized in healthcare taxonomy
                 {skillsValidation.unrecognized.length > 0 && (
                   <> · unrecognized: {skillsValidation.unrecognized.join(", ")}</>
                 )}
@@ -198,7 +263,7 @@ export function ResumeResult({
 
           {/* Certifications */}
           {data.certifications.length > 0 && (
-            <Section title="Certifications" count={data.certifications.length}>
+            <Section title="Certifications" count={data.certifications.length} delay={240}>
               <ul className="space-y-1 text-sm">
                 {data.certifications.map((c, i) => (
                   <li key={i}>
@@ -213,14 +278,14 @@ export function ResumeResult({
 
           {/* Languages */}
           {data.languages.length > 0 && (
-            <Section title="Languages" count={data.languages.length}>
+            <Section title="Languages" count={data.languages.length} delay={300}>
               <Chips items={data.languages} />
             </Section>
           )}
 
           {/* References */}
           {data.references && data.references.length > 0 && (
-            <Section title="References" count={data.references.length}>
+            <Section title="References" count={data.references.length} delay={360}>
               <ul className="space-y-1 text-sm">
                 {data.references.map((r, i) => (
                   <li key={i}>
@@ -238,14 +303,14 @@ export function ResumeResult({
 
           {/* Awards */}
           {data.awards && data.awards.length > 0 && (
-            <Section title="Awards" count={data.awards.length}>
+            <Section title="Awards" count={data.awards.length} delay={420}>
               <Chips items={data.awards} tone="success" />
             </Section>
           )}
 
           {/* Publications */}
           {data.publications && data.publications.length > 0 && (
-            <Section title="Publications" count={data.publications.length}>
+            <Section title="Publications" count={data.publications.length} delay={480}>
               <ul className="list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300">
                 {data.publications.map((pub, i) => (
                   <li key={i}>{pub}</li>

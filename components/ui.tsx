@@ -39,7 +39,8 @@ export function Button({ variant = "primary", loading = false, className, childr
   const base =
     "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
   const variants: Record<string, string> = {
-    primary: "bg-indigo-600 text-white hover:bg-indigo-500",
+    primary:
+      "bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/20 hover:shadow-lg hover:shadow-teal-500/30 active:scale-95",
     secondary:
       "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800",
     danger: "bg-red-600 text-white hover:bg-red-500",
@@ -58,7 +59,7 @@ export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputEleme
     <input
       className={cn(
         "h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none",
-        "focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20",
+        "focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20",
         "dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
         className,
       )}
@@ -72,7 +73,7 @@ export function Textarea({ className, ...rest }: TextareaHTMLAttributes<HTMLText
     <textarea
       className={cn(
         "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none",
-        "focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20",
+        "focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20",
         "dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
         className,
       )}
@@ -106,13 +107,13 @@ export function Badge({
 }) {
   const tones: Record<string, string> = {
     neutral: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-    success: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
     danger: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-    info: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
+    info: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
   };
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", tones[tone])}>
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ring-black/5 dark:ring-white/5", tones[tone])}>
       {children}
     </span>
   );
