@@ -8,7 +8,10 @@ export interface UatSettings {
 
 const STORAGE_KEY = "uat-console-settings";
 
+// Prefer the value baked in from .env (NEXT_PUBLIC_API_BASE_URL); fall back to
+// the current production Function URL so the console works out of the box.
 export const DEFAULT_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ||
   "https://dqzxwwacosqcxipouyzxnrh7ky0sdnqw.lambda-url.us-east-2.on.aws/";
 
 export function getSettings(): UatSettings {

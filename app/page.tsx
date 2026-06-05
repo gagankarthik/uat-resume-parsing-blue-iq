@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ResumeResult } from "@/components/ResumeResult";
 import { getJobStatus, parseResume } from "@/lib/api";
 import { DEFAULT_BASE_URL, getSettings, saveSettings } from "@/lib/settings";
-import { ApiError } from "@/lib/types";
+import { ApiError, type JobStatusResponse, type ParseResponse } from "@/lib/types";
+
+type Result = ParseResponse | JobStatusResponse;
 
 const ACCEPT = ".pdf,.docx,.png,.jpg,.jpeg,.tiff,.tif,.webp";
 const STAGES = ["Uploading file…", "Extracting text…", "Structuring with AI…", "Finalizing…"];
@@ -31,7 +34,7 @@ export default function Home() {
   const [drag, setDrag] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [stage, setStage] = useState(0);
-  const [result, setResult] = useState<unknown>(null);
+  const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,20 +63,16 @@ export default function Home() {
 
   const run = useCallback(
     async (f: File) => {
-      if (!apiKey.trim()) {
-        setError("Enter your API key first.");
-        setPhase("error");
-        return;
-      }
+      // API key is optional here — the server proxy supplies it from .env when
+      // RESUME_PARSER_API_KEY is set. A missing key surfaces as a 401 from the API.
       saveSettings({ apiBaseUrl: baseUrl.trim() || DEFAULT_BASE_URL, apiKey: apiKey.trim() });
       setError("");
       setResult(null);
       setStage(0);
       setPhase("parsing");
       try {
-        let res: unknown = await parseResume(f);
-        const r = res as { status: string; job_id: string };
-        if (r.status === "processing") res = await poll(r.job_id);
+        let res: Result = await parseResume(f);
+        if (res.status === "processing") res = await poll(res.job_id);
         setResult(res);
         setPhase("done");
       } catch (e) {
@@ -91,8 +90,7 @@ export default function Home() {
   }
 
   function download() {
-    const r = result as { data?: unknown } | null;
-    const payload = r && typeof r === "object" && "data" in r && r.data ? r.data : result;
+    const payload = result?.data ?? result;
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -138,14 +136,15 @@ export default function Home() {
           </button>
         </div>
         <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-          Sent as <code className="font-mono">X-API-Key</code>. Stored only in your browser.
+          Sent as <code className="font-mono">X-API-Key</code>, stored only in your browser. Leave blank to use the
+          server&apos;s <code className="font-mono">.env</code> key (<code className="font-mono">RESUME_PARSER_API_KEY</code>).
         </p>
       </div>
 
       {/* Dropzone / loader / result */}
       {phase === "parsing" ? (
         <Loader filename={file?.name} stage={STAGES[stage]} />
-      ) : phase === "done" ? (
+      ) : phase === "done" && result ? (
         <ResultView
           filename={file?.name}
           result={result}
@@ -233,15 +232,15 @@ function ResultView({
   onReset,
 }: {
   filename?: string;
-  result: unknown;
+  result: Result;
   onDownload: () => void;
   onReset: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const json = JSON.stringify(result, null, 2);
+  const json = JSON.stringify(result.data ?? result, null, 2);
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Parsed
@@ -267,7 +266,11 @@ function ResultView({
           </button>
         </div>
       </div>
-      <pre className="max-h-[32rem] overflow-auto rounded-xl bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-100">{json}</pre>
+      {result.data ? (
+        <ResumeResult data={result.data} confidence={result.confidence} skillsValidation={result.skills_validation} />
+      ) : (
+        <p className="text-sm text-zinc-500">No parsed data returned.</p>
+      )}
     </div>
   );
 }

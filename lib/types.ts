@@ -18,8 +18,16 @@ export interface Experience {
   end_date: string | null;
   is_current: boolean | null;
   location: string | null;
-  description: string | null;
+  description: string[]; // one item per responsibility/bullet
   achievements: string[];
+}
+
+export interface Reference {
+  name: string | null;
+  relationship: string | null;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
 }
 
 export interface Education {
@@ -54,6 +62,9 @@ export interface ParsedResume {
   certifications: Certification[];
   projects: Project[];
   languages: string[];
+  references?: Reference[];
+  awards?: string[];
+  publications?: string[];
 }
 
 export interface ConfidenceScores {
@@ -64,6 +75,16 @@ export interface ConfidenceScores {
   skills: number;
 }
 
+export interface SkillsValidation {
+  total: number;
+  recognized_count: number;
+  unrecognized_count: number;
+  recognized_ratio: number;
+  recognized: string[];
+  unrecognized: string[];
+  groups: Record<string, string>;
+}
+
 export type JobStatus = "pending" | "processing" | "completed" | "failed";
 
 export interface ParseResponse {
@@ -71,6 +92,7 @@ export interface ParseResponse {
   status: JobStatus;
   data: ParsedResume | null;
   confidence: ConfidenceScores | null;
+  skills_validation?: SkillsValidation | null;
   poll_url: string | null;
 }
 
@@ -79,6 +101,7 @@ export interface JobStatusResponse {
   status: JobStatus;
   data: ParsedResume | null;
   confidence: ConfidenceScores | null;
+  skills_validation?: SkillsValidation | null;
   error: string | null;
 }
 

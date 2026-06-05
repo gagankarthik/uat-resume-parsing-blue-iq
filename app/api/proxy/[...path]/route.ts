@@ -5,10 +5,15 @@ import { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 async function forward(req: NextRequest, path: string[]): Promise<Response> {
-  const baseUrl = req.headers.get("x-target-base-url");
-  const apiKey = req.headers.get("x-api-key") ?? "";
+  // .env is authoritative; the client-provided headers (localStorage) are a
+  // fallback so the console still works without server config.
+  const baseUrl = process.env.RESUME_PARSER_API_BASE_URL?.trim() || req.headers.get("x-target-base-url");
+  const apiKey = process.env.RESUME_PARSER_API_KEY?.trim() || req.headers.get("x-api-key") || "";
   if (!baseUrl) {
-    return Response.json({ error: { detail: "Missing x-target-base-url header" } }, { status: 400 });
+    return Response.json(
+      { error: { detail: "No API base URL — set RESUME_PARSER_API_BASE_URL in .env.local or enter one in the console." } },
+      { status: 400 },
+    );
   }
 
   const base = baseUrl.replace(/\/+$/, "");
