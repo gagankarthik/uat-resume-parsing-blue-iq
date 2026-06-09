@@ -23,6 +23,7 @@ export interface Experience {
   state?: string | null;
   country?: string | null;
   zip_code?: string | null;
+  employer_phone?: string | null;
   // Clinical classification
   profession?: string | null;
   specialties?: string[];
@@ -69,6 +70,7 @@ export interface Certification {
   issuer: string | null;
   issued_date: string | null;
   expiry_date: string | null;
+  date: string | null; // unlabeled date (not known to be issue vs expiry)
   credential_id: string | null;
 }
 

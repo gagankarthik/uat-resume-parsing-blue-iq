@@ -15,18 +15,17 @@ function confTone(v: number): "success" | "warning" | "danger" {
   return "danger";
 }
 
-// "2024-02-16" → "Feb 16, 2024"; "2024-02-01" → "Feb 2024" guess is unsafe, so
-// month-only-looking values still render the day. "Present" passes through.
-function fmtDate(d: string | null): string {
+// The API emits MM/DD/YYYY, MM/YYYY, YYYY, or "Present" — preserving whatever
+// precision the résumé stated. Render each nicely; never invent a missing part.
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function fmtDate(d: string | null | undefined): string {
   if (!d) return "—";
   if (d.toLowerCase() === "present") return "Present";
-  const full = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
-  if (full) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const [, y, m, day] = full;
-    return `${months[Number(m) - 1] ?? m} ${Number(day)}, ${y}`;
-  }
-  return d;
+  let m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d); // MM/DD/YYYY
+  if (m) return `${MONTHS[Number(m[1]) - 1] ?? m[1]} ${Number(m[2])}, ${m[3]}`;
+  m = /^(\d{2})\/(\d{4})$/.exec(d); // MM/YYYY
+  if (m) return `${MONTHS[Number(m[1]) - 1] ?? m[1]} ${m[2]}`;
+  return d; // YYYY or anything else, as-is
 }
 
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
@@ -89,6 +88,7 @@ function WorkDetails({ e }: { e: Experience }) {
     ["Trauma level", e.trauma_level],
     ["Charge experience", e.charge_experience],
     ["ZIP code", e.zip_code],
+    ["Employer phone", e.employer_phone],
     ["Reason for leaving", e.reason_for_leaving],
     ["Additional info", e.additional_info],
   ];
@@ -269,7 +269,11 @@ export function ResumeResult({
                   <li key={i}>
                     <span className="font-medium text-zinc-900 dark:text-zinc-100">{c.name}</span>
                     {c.issuer && <span className="text-zinc-500"> · {c.issuer}</span>}
+                    {c.issued_date && <span className="text-zinc-400"> · issued {fmtDate(c.issued_date)}</span>}
                     {c.expiry_date && <span className="text-zinc-400"> · exp {fmtDate(c.expiry_date)}</span>}
+                    {c.date && !c.issued_date && !c.expiry_date && (
+                      <span className="text-zinc-400"> · {fmtDate(c.date)}</span>
+                    )}
                   </li>
                 ))}
               </ul>
