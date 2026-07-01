@@ -11,6 +11,19 @@ export interface PersonalInfo {
   summary: string | null;
 }
 
+// A per-role specialty mapped to the platform catalog by the parser's tiered
+// matcher. Unmatched specialties still arrive (specialty_id null, matched false)
+// so a reviewer can see what didn't map rather than it being silently dropped.
+export interface SpecialtyMatch {
+  name: string;
+  raw?: string | null;
+  specialty_id?: string | null;
+  group?: string | null;
+  confidence?: number;
+  matched?: boolean;
+  match_tier?: "name" | "full_name" | "keywords" | "ai" | null;
+}
+
 export interface Experience {
   company: string | null;
   role: string | null;
@@ -26,7 +39,7 @@ export interface Experience {
   employer_phone?: string | null;
   // Clinical classification
   profession?: string | null;
-  specialties?: string[];
+  specialties?: SpecialtyMatch[];
   // Facility attributes
   service_type?: string | null;
   nurse_to_patient_ratio?: string | null;

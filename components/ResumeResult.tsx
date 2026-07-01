@@ -7,7 +7,7 @@
 import { useState } from "react";
 
 import { Badge } from "@/components/ui";
-import type { ConfidenceScores, Experience, ParsedResume, SkillsValidation } from "@/lib/types";
+import type { ConfidenceScores, Experience, ParsedResume, SkillsValidation, SpecialtyMatch } from "@/lib/types";
 
 function confTone(v: number): "success" | "warning" | "danger" {
   if (v >= 0.8) return "success";
@@ -119,6 +119,37 @@ function Chips({ items, tone = "neutral" }: { items: string[]; tone?: "neutral" 
   );
 }
 
+// Per-role specialties now arrive as objects mapped to the platform catalog. Show
+// the platform's exact name plus its id + confidence so a tester can verify the
+// mapping; an unmatched specialty (no id) is flagged amber for review, not hidden.
+// Tolerates a plain string too, in case of an older API response.
+function SpecialtyChips({ items }: { items: Array<SpecialtyMatch | string> }) {
+  if (!items.length) return <p className="text-sm text-zinc-400">— none —</p>;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((raw, i) => {
+        const s: SpecialtyMatch = typeof raw === "string" ? { name: raw } : raw;
+        const matched = Boolean(s.specialty_id);
+        const conf = typeof s.confidence === "number" ? s.confidence : undefined;
+        return (
+          <Badge key={`${s.name}-${i}`} tone={matched ? "info" : "warning"}>
+            {s.name || "—"}
+            {matched ? (
+              <span className="ml-1.5 font-mono text-[10px] opacity-70">
+                #{s.specialty_id}
+                {conf !== undefined ? ` · ${conf.toFixed(2)}` : ""}
+                {s.match_tier ? ` · ${s.match_tier}` : ""}
+              </span>
+            ) : (
+              <span className="ml-1.5 text-[10px] font-medium opacity-80">· no id · review</span>
+            )}
+          </Badge>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ResumeResult({
   data,
   confidence,
@@ -197,7 +228,7 @@ export function ResumeResult({
                     {e.location && <p className="mt-0.5 text-xs text-zinc-500">{e.location}</p>}
                     {e.specialties && e.specialties.length > 0 && (
                       <div className="mt-2">
-                        <Chips items={e.specialties} tone="info" />
+                        <SpecialtyChips items={e.specialties} />
                       </div>
                     )}
                     <WorkDetails e={e} />
