@@ -19,7 +19,7 @@ npm run dev                  # http://localhost:3000
 
 | Var | Purpose |
 |---|---|
-| `NEXT_PUBLIC_API_BASE_URL` | Base URL of the resume-parser API to test against |
+| `NEXT_PUBLIC_API_BASE_URL` | Base URL of the resume-parser API to test against (production: `https://api.parsinglab.blue-iq.ai`) |
 | `RESUME_PARSER_API_KEY` | Sent upstream as `X-API-Key`. Never commit a real key. |
 
 ## Architecture
