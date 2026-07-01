@@ -16,7 +16,7 @@ function confTone(v: number): "success" | "warning" | "danger" {
 }
 
 // The API emits MM/DD/YYYY, MM/YYYY, YYYY, or "Present" — preserving whatever
-// precision the résumé stated. Render each nicely; never invent a missing part.
+// precision the resume stated. Render each nicely; never invent a missing part.
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function fmtDate(d: string | null | undefined): string {
   if (!d) return "—";

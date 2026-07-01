@@ -45,7 +45,7 @@ export function BatchPanel() {
 
   return (
     <div>
-      <EndpointHeader method="POST" path="/api/v1/resume/batch" title="Batch parse" blurb="Upload many résumés at once. The API accepts them, returns a batch ID and per-file job IDs, and processes asynchronously — the console polls the batch until every file finishes." />
+      <EndpointHeader method="POST" path="/api/v1/resume/batch" title="Batch parse" blurb="Upload many resumes at once. The API accepts them, returns a batch ID and per-file job IDs, and processes asynchronously — the console polls the batch until every file finishes." />
 
       {files.length === 0 ? (
         <Dropzone accept=".pdf,.docx,.rtf,.png,.jpg,.jpeg,.tiff,.tif,.webp" multiple onFiles={setFiles} hint="select multiple files" />

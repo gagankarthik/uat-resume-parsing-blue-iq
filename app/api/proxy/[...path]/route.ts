@@ -5,9 +5,17 @@
 //   • RESUME_PARSER_API_KEY    — sent upstream as X-API-Key
 import { NextRequest } from "next/server";
 
+import { getSessionClaims } from "@/lib/session";
+
 export const dynamic = "force-dynamic";
 
 async function forward(req: NextRequest, path: string[]): Promise<Response> {
+  // Require a signed-in session — the server-held API key must never be usable
+  // by an unauthenticated caller.
+  if (!(await getSessionClaims())) {
+    return Response.json({ error: { detail: "Sign in to use the console." } }, { status: 401 });
+  }
+
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
   const apiKey = process.env.RESUME_PARSER_API_KEY?.trim() || "";
   if (!baseUrl) {

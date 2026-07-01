@@ -62,8 +62,8 @@ export function ParsePanel() {
       <EndpointHeader
         method="POST"
         path="/api/v1/resume/parse"
-        title="Parse a résumé"
-        blurb="Upload a single résumé. Digital PDF/DOCX/RTF return structured JSON synchronously; scanned PDFs and images return a job that the console polls to completion."
+        title="Parse a resume"
+        blurb="Upload a single resume. Digital PDF/DOCX/RTF return structured JSON synchronously; scanned PDFs and images return a job that the console polls to completion."
       />
 
       {phase === "parsing" ? (
@@ -119,7 +119,7 @@ function Loader({ filename, stageIndex }: { filename?: string; stageIndex: numbe
           </div>
           <div className="animate-scan absolute inset-x-1.5 h-[2px] rounded-full bg-accent-500 shadow-[0_0_10px_2px_rgba(20,184,166,0.7)]" />
         </div>
-        <p className="mt-6 font-display text-lg font-medium tracking-tight">Parsing résumé</p>
+        <p className="mt-6 font-display text-lg font-medium tracking-tight">Parsing resume</p>
         <ul className="mt-4 w-full max-w-[15rem] space-y-2">
           {STAGES.map((s, i) => {
             const done = i < stageIndex;

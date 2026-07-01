@@ -27,7 +27,7 @@ const NAV: Group[] = [
   {
     name: "Parsing",
     items: [
-      { id: "parse", method: "POST", label: "Parse résumé", Component: ParsePanel },
+      { id: "parse", method: "POST", label: "Parse resume", Component: ParsePanel },
       { id: "batch", method: "POST", label: "Batch parse", Component: BatchPanel },
       { id: "large", method: "POST", label: "Large files", Component: LargeFilePanel },
     ],
