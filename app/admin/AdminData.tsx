@@ -18,6 +18,11 @@ interface ScanResult {
   scannedCount: number;
   truncated: boolean;
 }
+interface TableSummary extends TableRef {
+  count: number;
+  sizeBytes: number;
+  ok: boolean;
+}
 
 function cellText(v: unknown): string {
   if (v == null) return "—";
@@ -27,6 +32,7 @@ function cellText(v: unknown): string {
 
 export function AdminData({ tables, email }: { tables: TableRef[]; email: string }) {
   const [active, setActive] = useState(tables[0]?.id ?? "");
+  const [summary, setSummary] = useState<TableSummary[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ code: number; ms: number } | null>(null);
   const [data, setData] = useState<ScanResult | null>(null);
@@ -66,6 +72,13 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
     }
   }, [active, load]);
 
+  useEffect(() => {
+    fetch("/api/admin/dynamo?summary=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setSummary(d?.tables ?? null))
+      .catch(() => {});
+  }, []);
+
   const items = data?.items ?? [];
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -96,6 +109,26 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
         <p className="mt-1.5 text-sm text-ink-soft">
           Live contents of the resume-parser tables (region us-east-2). Read-only. Signed in as {email}.
         </p>
+      </div>
+
+      {/* At-a-glance: every table + item count */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        {(summary ?? tables.map((t) => ({ ...t, count: -1, sizeBytes: 0, ok: true }))).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActive(t.id)}
+            className={cn(
+              "rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5",
+              active === t.id ? "border-accent-300 bg-accent-50 shadow-sm" : "border-line bg-surface hover:border-accent-200",
+            )}
+          >
+            <p className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-soft">{t.label}</p>
+            <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">
+              {(t as TableSummary).count >= 0 ? (t as TableSummary).count.toLocaleString() : "…"}
+            </p>
+            {"ok" in t && !(t as TableSummary).ok && <p className="text-[10px] text-red-600">unreachable</p>}
+          </button>
+        ))}
       </div>
 
       {/* Table tabs */}

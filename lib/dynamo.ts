@@ -2,7 +2,7 @@
 // tables directly with the AWS SDK. Credentials come from server env (falling
 // back to the default provider chain / instance role if unset).
 
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DescribeTableCommand, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 
 const REGION = process.env.NEXT_PUBLIC_AWS_REGION || "us-east-2";
@@ -13,11 +13,16 @@ function credentials() {
   return accessKeyId && secretAccessKey ? { accessKeyId, secretAccessKey } : undefined;
 }
 
+let _client: DynamoDBClient | null = null;
+function client(): DynamoDBClient {
+  if (!_client) _client = new DynamoDBClient({ region: REGION, credentials: credentials() });
+  return _client;
+}
+
 let _doc: DynamoDBDocumentClient | null = null;
 function doc(): DynamoDBDocumentClient {
   if (!_doc) {
-    const client = new DynamoDBClient({ region: REGION, credentials: credentials() });
-    _doc = DynamoDBDocumentClient.from(client, { marshallOptions: { removeUndefinedValues: true } });
+    _doc = DynamoDBDocumentClient.from(client(), { marshallOptions: { removeUndefinedValues: true } });
   }
   return _doc;
 }
@@ -59,4 +64,25 @@ export async function scanTable(name: string, limit = 300): Promise<ScanResult> 
     scannedCount: out.ScannedCount ?? 0,
     truncated: Boolean(out.LastEvaluatedKey),
   };
+}
+
+export interface TableSummary extends TableRef {
+  count: number;
+  sizeBytes: number;
+  ok: boolean;
+  error?: string;
+}
+
+/** Live at-a-glance counts for every table (fast DescribeTable, run in parallel). */
+export async function summarizeTables(): Promise<TableSummary[]> {
+  return Promise.all(
+    PARSER_TABLES.map(async (t): Promise<TableSummary> => {
+      try {
+        const d = await client().send(new DescribeTableCommand({ TableName: t.name }));
+        return { ...t, count: d.Table?.ItemCount ?? 0, sizeBytes: d.Table?.TableSizeBytes ?? 0, ok: true };
+      } catch (e) {
+        return { ...t, count: 0, sizeBytes: 0, ok: false, error: e instanceof Error ? e.message : "describe failed" };
+      }
+    }),
+  );
 }

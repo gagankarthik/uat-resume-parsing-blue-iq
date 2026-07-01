@@ -3,7 +3,7 @@
 import { NextRequest } from "next/server";
 
 import { isCurrentUserAdmin } from "@/lib/admin";
-import { scanTable, tableById } from "@/lib/dynamo";
+import { scanTable, summarizeTables, tableById } from "@/lib/dynamo";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,15 @@ export async function GET(req: NextRequest) {
   if (!(await isCurrentUserAdmin())) {
     return Response.json({ error: { detail: "Admin access required" } }, { status: 403 });
   }
+
+  if (req.nextUrl.searchParams.get("summary")) {
+    try {
+      return Response.json({ tables: await summarizeTables() });
+    } catch (e) {
+      return Response.json({ error: { detail: e instanceof Error ? e.message : "Summary failed" } }, { status: 500 });
+    }
+  }
+
   const id = req.nextUrl.searchParams.get("table") || "";
   const ref = tableById(id);
   if (!ref) {
