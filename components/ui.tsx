@@ -1,4 +1,5 @@
-// Shared presentational primitives. Pure Tailwind, no external deps.
+// Shared presentational primitives — matched to the Blue-IQ Parser product UI:
+// cool paper, navy ink, cobalt accent. Pure Tailwind, no external deps.
 "use client";
 
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
@@ -7,15 +8,27 @@ export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }
 
+/** Brand monogram — a document being parsed into structured lines. */
+export function BrandMark({ className = "h-9 w-9" }: { className?: string }) {
+  return (
+    <span className={cn("relative grid shrink-0 place-items-center overflow-hidden rounded-[10px] bg-accent-700 text-[var(--surface)] shadow-sm ring-1 ring-black/10", className)}>
+      <svg viewBox="0 0 24 24" fill="none" className="h-[60%] w-[60%]">
+        <path d="M6 6.5h8M6 10h11M6 13.5h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M14.2 14.3l2.1 2.1 3.6-4" stroke="var(--color-brass-400)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+/** Real brand lockup (public/logo.svg). */
+export function Logo({ className = "h-7 w-auto" }: { className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/logo.svg" alt="Blue-IQ" className={className} />;
+}
+
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div
-      className={cn(
-        "rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm",
-        "dark:border-zinc-800 dark:bg-zinc-900",
-        className,
-      )}
-    >
+    <div className={cn("rounded-2xl border border-line bg-surface p-6 shadow-[0_1px_2px_rgba(10,23,51,0.04),0_8px_24px_-16px_rgba(10,23,51,0.16)]", className)}>
       {children}
     </div>
   );
@@ -24,8 +37,8 @@ export function Card({ children, className }: { children: ReactNode; className?:
 export function SectionTitle({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
     <div className="mb-4">
-      <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{children}</h2>
-      {hint && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{hint}</p>}
+      <h2 className="font-display text-lg font-semibold tracking-tight text-ink">{children}</h2>
+      {hint && <p className="mt-1 text-sm text-ink-soft">{hint}</p>}
     </div>
   );
 }
@@ -36,15 +49,12 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export function Button({ variant = "primary", loading = false, className, children, disabled, ...rest }: ButtonProps) {
-  const base =
-    "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  const base = "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50";
   const variants: Record<string, string> = {
-    primary:
-      "bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/20 hover:shadow-lg hover:shadow-teal-500/30 active:scale-95",
-    secondary:
-      "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800",
-    danger: "bg-red-600 text-white hover:bg-red-500",
-    ghost: "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800",
+    primary: "bg-accent-700 text-[var(--surface)] shadow-sm hover:bg-accent-800 hover:-translate-y-px active:translate-y-0",
+    secondary: "border border-line-strong bg-surface text-ink hover:border-accent-300 hover:bg-accent-50",
+    danger: "bg-red-700 text-white hover:bg-red-800",
+    ghost: "text-ink-soft hover:bg-black/[0.04] hover:text-ink",
   };
   return (
     <button className={cn(base, variants[variant], className)} disabled={disabled || loading} {...rest}>
@@ -58,9 +68,8 @@ export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputEleme
   return (
     <input
       className={cn(
-        "h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none",
-        "focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20",
-        "dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
+        "h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink outline-none transition-colors",
+        "placeholder:text-ink-soft/60 focus:border-accent-500 focus:ring-4 focus:ring-accent-500/10",
         className,
       )}
       {...rest}
@@ -72,9 +81,8 @@ export function Textarea({ className, ...rest }: TextareaHTMLAttributes<HTMLText
   return (
     <textarea
       className={cn(
-        "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none",
-        "focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20",
-        "dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
+        "w-full rounded-xl border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-colors",
+        "placeholder:text-ink-soft/60 focus:border-accent-500 focus:ring-4 focus:ring-accent-500/10",
         className,
       )}
       {...rest}
@@ -83,37 +91,23 @@ export function Textarea({ className, ...rest }: TextareaHTMLAttributes<HTMLText
 }
 
 export function Label({ children }: { children: ReactNode }) {
-  return <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{children}</label>;
+  return <label className="mb-1.5 block text-sm font-medium text-ink">{children}</label>;
 }
 
 export function Spinner({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent",
-        className,
-      )}
-      aria-hidden
-    />
-  );
+  return <span className={cn("inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent", className)} aria-hidden />;
 }
 
-export function Badge({
-  children,
-  tone = "neutral",
-}: {
-  children: ReactNode;
-  tone?: "neutral" | "success" | "warning" | "danger" | "info";
-}) {
+export function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "success" | "warning" | "danger" | "info" }) {
   const tones: Record<string, string> = {
-    neutral: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-    danger: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-    info: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
+    neutral: "bg-black/[0.05] text-ink-soft ring-line",
+    success: "bg-accent-50 text-accent-700 ring-accent-200",
+    warning: "bg-amber-100 text-amber-800 ring-amber-200",
+    danger: "bg-red-100 text-red-700 ring-red-200",
+    info: "bg-accent-50 text-accent-700 ring-accent-200",
   };
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ring-black/5 dark:ring-white/5", tones[tone])}>
+    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 font-mono text-[0.7rem] font-medium ring-1 ring-inset", tones[tone])}>
       {children}
     </span>
   );
@@ -121,8 +115,11 @@ export function Badge({
 
 export function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-      {message}
+    <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
+        <path d="M12 8v5M12 16h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span>{message}</span>
     </div>
   );
 }

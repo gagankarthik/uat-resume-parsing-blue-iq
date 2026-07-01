@@ -11,7 +11,7 @@ import type { CallResult } from "@/lib/api";
 // ── HTTP method chip ──────────────────────────────────────────────────────────
 const METHOD_TONE: Record<string, string> = {
   GET: "text-sky-600 dark:text-sky-400",
-  POST: "text-teal-600 dark:text-teal-400",
+  POST: "text-accent-600 dark:text-accent-400",
   DELETE: "text-red-600 dark:text-red-400",
   PATCH: "text-amber-600 dark:text-amber-400",
 };
@@ -53,7 +53,7 @@ export function CopyButton({ text, label = "Copy" }: { text: string; label?: str
         setCopied(true);
         setTimeout(() => setCopied(false), 1400);
       }}
-      className="rounded-md border border-[var(--line)] bg-[var(--bg-elev)] px-2.5 py-1 font-mono text-[11px] font-medium text-[var(--muted)] transition-colors hover:border-teal-400 hover:text-teal-600 active:scale-95 dark:hover:text-teal-400"
+      className="rounded-md border border-[var(--line)] bg-[var(--bg-elev)] px-2.5 py-1 font-mono text-[11px] font-medium text-[var(--muted)] transition-colors hover:border-accent-400 hover:text-accent-600 active:scale-95 dark:hover:text-accent-400"
     >
       {copied ? "Copied ✓" : label}
     </button>
@@ -147,14 +147,14 @@ export function Dropzone({
       className={cn(
         "group relative flex cursor-pointer flex-col items-center justify-center overflow-visible rounded-2xl border bg-[var(--bg-elev)]/70 text-center backdrop-blur-md transition-all duration-300",
         compact ? "px-5 py-8" : "px-6 py-14",
-        drag ? "ring-glow scale-[1.01] border-transparent" : "border-[var(--line)] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-teal-500/10",
+        drag ? "ring-glow scale-[1.01] border-transparent" : "border-[var(--line)] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-accent-500/10",
       )}
     >
       <div
         className={cn(
           "grid place-items-center rounded-2xl transition-all duration-300",
           compact ? "h-11 w-11" : "h-14 w-14",
-          drag ? "scale-110 bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/30" : "bg-teal-50 text-teal-600 group-hover:scale-105 dark:bg-teal-950/50 dark:text-teal-400",
+          drag ? "scale-110 bg-accent-600 text-white shadow-lg shadow-accent-500/30" : "bg-accent-50 text-accent-600 group-hover:scale-105 dark:bg-accent-950/50 dark:text-accent-400",
         )}
       >
         <svg width={compact ? 20 : 26} height={compact ? 20 : 26} viewBox="0 0 24 24" fill="none" className={drag ? "" : "animate-float"}>
@@ -165,7 +165,7 @@ export function Dropzone({
         {drag ? "Release to upload" : multiple ? "Drop files here" : "Drop a file here"}
       </p>
       <p className="mt-1 text-sm text-[var(--muted)]">
-        or <span className="font-medium text-teal-600 group-hover:underline dark:text-teal-400">browse</span>
+        or <span className="font-medium text-accent-600 group-hover:underline dark:text-accent-400">browse</span>
         {hint ? ` · ${hint}` : ""}
       </p>
       <input ref={inputRef} type="file" accept={accept} multiple={multiple} className="hidden" onChange={(e) => emit(e.target.files)} />

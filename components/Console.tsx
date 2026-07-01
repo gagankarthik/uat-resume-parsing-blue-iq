@@ -70,7 +70,7 @@ export function Console() {
                       className={cn(
                         "group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
                         active === it.id
-                          ? "bg-teal-50 font-medium text-teal-700 ring-1 ring-inset ring-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:ring-teal-900"
+                          ? "bg-accent-50 font-medium text-accent-700 ring-1 ring-inset ring-accent-200 dark:bg-accent-950/40 dark:text-accent-300 dark:ring-accent-900"
                           : "text-[var(--fg)] hover:bg-[var(--bg-elev)]",
                       )}
                     >
@@ -93,7 +93,7 @@ export function Console() {
             onClick={() => setActive(it.id)}
             className={cn(
               "shrink-0 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
-              active === it.id ? "border-teal-500 bg-teal-50 font-medium text-teal-700 dark:bg-teal-950/40 dark:text-teal-300" : "border-[var(--line)] text-[var(--muted)]",
+              active === it.id ? "border-accent-500 bg-accent-50 font-medium text-accent-700 dark:bg-accent-950/40 dark:text-accent-300" : "border-[var(--line)] text-[var(--muted)]",
             )}
           >
             {it.label}

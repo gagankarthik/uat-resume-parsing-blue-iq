@@ -81,7 +81,7 @@ export function LargeFilePanel() {
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/70 p-5 backdrop-blur">
           <div className="mb-4 flex items-center justify-between">
             <p className="truncate text-sm font-medium">{file.name} <span className="font-mono text-xs text-[var(--muted)]">· {humanSize(file.size)}</span></p>
-            {!running && <button onClick={() => { setFile(null); setSteps(START); setParsed(null); setPresign(null); }} className="text-xs text-[var(--muted)] hover:text-teal-600 dark:hover:text-teal-400">Start over</button>}
+            {!running && <button onClick={() => { setFile(null); setSteps(START); setParsed(null); setPresign(null); }} className="text-xs text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400">Start over</button>}
           </div>
           <ol className="space-y-2.5">
             {steps.map((s, i) => (
@@ -89,11 +89,11 @@ export function LargeFilePanel() {
                 <span className={cn(
                   "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px] font-bold transition-all",
                   s.state === "ok" ? "border-emerald-500 bg-emerald-500 text-white" :
-                  s.state === "running" ? "border-teal-500 text-teal-600 dark:text-teal-400" :
+                  s.state === "running" ? "border-accent-500 text-accent-600 dark:text-accent-400" :
                   s.state === "error" ? "border-red-500 bg-red-500 text-white" :
                   "border-[var(--line)] text-[var(--muted)]",
                 )}>
-                  {s.state === "ok" ? "✓" : s.state === "error" ? "!" : s.state === "running" ? <span className="h-2 w-2 animate-ping rounded-full bg-teal-500" /> : i + 1}
+                  {s.state === "ok" ? "✓" : s.state === "error" ? "!" : s.state === "running" ? <span className="h-2 w-2 animate-ping rounded-full bg-accent-500" /> : i + 1}
                 </span>
                 <div className="min-w-0">
                   <p className={cn("text-sm", s.state === "idle" ? "text-[var(--muted)]" : "text-[var(--fg)]")}>{s.label}</p>
@@ -118,7 +118,7 @@ export function LargeFilePanel() {
 
       {presign && (
         <details className="mt-4">
-          <summary className="cursor-pointer select-none text-xs font-medium text-[var(--muted)] hover:text-teal-600 dark:hover:text-teal-400">Raw presign + parse response</summary>
+          <summary className="cursor-pointer select-none text-xs font-medium text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400">Raw presign + parse response</summary>
           <div className="mt-3 space-y-3">
             <JsonBlock value={presign} max="max-h-64" />
             {parsed && <JsonBlock value={parsed} max="max-h-64" />}

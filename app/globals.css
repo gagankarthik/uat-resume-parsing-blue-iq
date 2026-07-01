@@ -1,200 +1,180 @@
 @import "tailwindcss";
 
-/* ── Design tokens ─────────────────────────────────────────────────────────── */
-@theme {
-  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
-  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jbmono), ui-monospace, "SF Mono", monospace;
-}
+/* Enterprise theme shared with the Blue-IQ Parser product UI: cool-white canvas,
+   deep navy ink, a confident cobalt-blue primary. Rebind the dark variant to a
+   class we never apply so OS dark-mode can't half-apply stray dark: utilities
+   (all existing `dark:` utilities in the console become inert). */
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --bg: #f7f8f7;
-  --bg-elev: #ffffff;
-  --fg: #16201d;
-  --muted: #5b6b66;
-  --line: #e3e8e5;
-  /* teal → emerald accent ramp */
-  --accent: #0d9488;
-  --accent-strong: #0f766e;
-  --accent-soft: #ccfbf1;
-  --glow-a: rgba(13, 148, 136, 0.20);
-  --glow-b: rgba(16, 185, 129, 0.16);
-  --glow-c: rgba(45, 212, 191, 0.14);
+  --paper: #f6f8fb;
+  --surface: #ffffff;
+  --ink: #0b1220;
+  --ink-soft: #475069;
+  --line: #e6e9f1;
+  --line-strong: #ccd2df;
+  --background: var(--paper);
+  --foreground: var(--ink);
+
+  /* Legacy token bridge — the console still references these names. */
+  --bg: var(--paper);
+  --bg-elev: var(--surface);
+  --fg: var(--ink);
+  --muted: var(--ink-soft);
+  --accent: #1d4ed8;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #060b0a;
-    --bg-elev: #0b1413;
-    --fg: #e8efec;
-    --muted: #8aa39c;
-    --line: #1b2826;
-    --accent: #2dd4bf;
-    --accent-strong: #14b8a6;
-    --accent-soft: #032420;
-    --glow-a: rgba(45, 212, 191, 0.18);
-    --glow-b: rgba(16, 185, 129, 0.14);
-    --glow-c: rgba(13, 148, 136, 0.16);
-  }
+@theme inline {
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+
+  /* Primary — confident cobalt blue. */
+  --color-accent-50: #eff4ff;
+  --color-accent-100: #dbe6fe;
+  --color-accent-200: #bfd1fd;
+  --color-accent-300: #93b2fb;
+  --color-accent-400: #5f87f6;
+  --color-accent-500: #3563ee;
+  --color-accent-600: #1d4ed8;
+  --color-accent-700: #1b3fb0;
+  --color-accent-800: #1c378f;
+  --color-accent-900: #1b3074;
+
+  --color-brass-400: #f59e0b;
+  --color-brass-500: #d97706;
+  --color-brass-600: #b45309;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv01";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* ── Atmospheric background (fixed, behind everything) ─────────────────────── */
-.bg-atmosphere {
+.font-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-optical-sizing: auto;
+}
+
+::selection {
+  background: var(--color-accent-200);
+  color: var(--color-accent-900);
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--color-accent-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Small-caps editorial label ─────────────────────────────────────────────── */
+.label-caps {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* ── Faint canvas texture for depth ─────────────────────────────────────────── */
+.paper-grain::before {
+  content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
-  overflow: hidden;
+  z-index: 0;
   pointer-events: none;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
-.bg-atmosphere::before {
-  /* fine grid */
-  content: "";
-  position: absolute;
-  inset: -2px;
-  background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--line) 70%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--line) 70%, transparent) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
-  opacity: 0.6;
-}
-.aurora {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(64px);
-  opacity: 0.9;
-  will-change: transform;
-}
-.aurora-a { top: -12%; left: -8%; width: 46vw; height: 46vw; background: var(--glow-a); animation: drift 22s ease-in-out infinite; }
-.aurora-b { top: 8%; right: -12%; width: 40vw; height: 40vw; background: var(--glow-b); animation: drift 28s ease-in-out infinite reverse; }
-.aurora-c { bottom: -18%; left: 28%; width: 50vw; height: 50vw; background: var(--glow-c); animation: drift 34s ease-in-out infinite; }
+.paper-grain > * { position: relative; z-index: 1; }
 
-/* film grain overlay */
-.bg-atmosphere::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
-  opacity: 0.025;
-  mix-blend-mode: overlay;
+/* Faint header grid backdrop. */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 75%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 75%);
 }
 
 /* ── Keyframes ─────────────────────────────────────────────────────────────── */
-@keyframes drift {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  33% { transform: translate3d(4%, 6%, 0) scale(1.08); }
-  66% { transform: translate3d(-3%, -4%, 0) scale(0.96); }
-}
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes float-y {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-@keyframes scan {
-  0% { top: 6%; opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { top: 90%; opacity: 0; }
-}
-@keyframes shimmer { 100% { transform: translateX(100%); } }
-@keyframes gradient-pan {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-@keyframes ring-pulse {
-  0% { transform: scale(0.98); opacity: 0.55; }
-  70% { transform: scale(1.04); opacity: 0; }
-  100% { opacity: 0; }
-}
-@keyframes pop-in {
-  0% { opacity: 0; transform: scale(0.92); }
-  60% { transform: scale(1.02); }
-  100% { opacity: 1; transform: scale(1); }
-}
+@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes pop-in { 0% { opacity: 0; transform: translateY(8px) scale(0.98); } 100% { opacity: 1; transform: none; } }
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes scan { 0% { top: 6%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
+@keyframes shimmer-sweep { 100% { transform: translateX(100%); } }
+@keyframes ring-pulse { 0% { transform: scale(0.98); opacity: 0.5; } 70% { transform: scale(1.04); opacity: 0; } 100% { opacity: 0; } }
 
-/* ── Utilities ─────────────────────────────────────────────────────────────── */
-.reveal { animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.fade-in { animation: fade-in 0.5s ease both; }
-.pop-in { animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-
-.text-gradient {
-  background: linear-gradient(100deg, var(--accent-strong), var(--accent) 40%, #34d399 70%, var(--accent));
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: gradient-pan 6s linear infinite alternate;
-}
-
-.animate-scan { animation: scan 1.7s ease-in-out infinite; }
+/* ── Utilities the console uses ─────────────────────────────────────────────── */
+.reveal { animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.pop-in { animation: pop-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .animate-float { animation: float-y 3.5s ease-in-out infinite; }
+.animate-scan { animation: scan 1.7s ease-in-out infinite; }
+
+/* Enterprise: no decorative gradient — "text-gradient" is a solid accent. */
+.text-gradient { color: var(--color-accent-600); }
 
 .animate-shimmer::after {
   content: "";
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--accent) 22%, transparent), transparent);
-  animation: shimmer 1.5s infinite;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-accent-500) 22%, transparent), transparent);
+  animation: shimmer-sweep 1.5s infinite;
 }
 
-/* animated gradient ring for the active dropzone */
+/* Animated accent ring for the active dropzone. */
 .ring-glow::before {
   content: "";
   position: absolute;
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: conic-gradient(from var(--angle, 0deg), var(--accent), #34d399, #22d3ee, var(--accent));
+  background: conic-gradient(from var(--angle, 0deg), var(--color-accent-500), var(--color-accent-300), var(--color-accent-600), var(--color-accent-500));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: spin-slow 4s linear infinite;
+  animation: spin-ring 4s linear infinite;
 }
 @property --angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
-@keyframes spin-slow { to { --angle: 360deg; } }
+@keyframes spin-ring { to { --angle: 360deg; } }
 
 .pulse-ring {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--color-accent-500);
   animation: ring-pulse 1.8s ease-out infinite;
 }
 
-/* refined scrollbar for the JSON view */
+/* Refined scrollbar for JSON / lists. */
 .scroll-fine::-webkit-scrollbar { width: 10px; height: 10px; }
 .scroll-fine::-webkit-scrollbar-track { background: transparent; }
 .scroll-fine::-webkit-scrollbar-thumb {
-  background: color-mix(in oklab, var(--accent) 40%, transparent);
+  background: color-mix(in oklab, var(--color-accent-500) 34%, transparent);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
-.scroll-fine::-webkit-scrollbar-thumb:hover { background: var(--accent); background-clip: padding-box; }
+.scroll-fine::-webkit-scrollbar-thumb:hover { background: var(--color-accent-500); background-clip: padding-box; }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .fade-in, .pop-in, .animate-scan, .animate-float, .text-gradient,
-  .animate-shimmer::after, .ring-glow::before, .pulse-ring, .aurora {
+  .reveal, .pop-in, .animate-float, .animate-scan, .animate-shimmer::after, .ring-glow::before, .pulse-ring {
     animation: none !important;
   }
   html { scroll-behavior: auto; }

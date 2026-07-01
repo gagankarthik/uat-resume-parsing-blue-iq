@@ -44,7 +44,7 @@ export function JobPanel() {
       {/* Retry */}
       <div className="mt-8 border-t border-[var(--line)] pt-6">
         <div className="mb-3 flex items-center gap-2.5">
-          <span className="rounded-md border border-[var(--line)] bg-[var(--bg-elev)] px-2 py-0.5 font-mono text-[11px] font-bold text-teal-600 dark:text-teal-400">POST</span>
+          <span className="rounded-md border border-[var(--line)] bg-[var(--bg-elev)] px-2 py-0.5 font-mono text-[11px] font-bold text-accent-600 dark:text-accent-400">POST</span>
           <code className="font-mono text-[13px] text-[var(--muted)]">/api/v1/resume/{"{job_id}"}/retry</code>
         </div>
         <p className="mb-4 text-sm text-[var(--muted)]">Re-parse the job above by re-uploading the same file.</p>

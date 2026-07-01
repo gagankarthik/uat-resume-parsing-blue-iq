@@ -53,7 +53,7 @@ export function BatchPanel() {
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/70 p-4 backdrop-blur">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-medium">{files.length} file{files.length > 1 ? "s" : ""} selected</p>
-            <button onClick={() => { setFiles([]); setSubmit(null); setStatus(null); }} className="text-xs text-[var(--muted)] hover:text-teal-600 dark:hover:text-teal-400">Clear</button>
+            <button onClick={() => { setFiles([]); setSubmit(null); setStatus(null); }} className="text-xs text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400">Clear</button>
           </div>
           <ul className="scroll-fine max-h-40 space-y-1.5 overflow-auto">
             {files.map((f, i) => (
@@ -91,13 +91,13 @@ export function BatchPanel() {
                   <div>
                     <div className="mb-1.5 flex items-center justify-between text-xs text-[var(--muted)]">
                       <span className="font-medium capitalize text-[var(--fg)]">
-                        {polling && <span className="mr-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-teal-500 align-middle" />}
+                        {polling && <span className="mr-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-accent-500 align-middle" />}
                         {st.status}
                       </span>
                       <span className="font-mono">{done}/{st.total} · {st.failed} failed</span>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--line)]">
-                      <div className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+                      <div className="h-full rounded-full bg-accent-600 transition-all duration-500" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 )}
@@ -116,7 +116,7 @@ export function BatchPanel() {
             )}
             {!submit.ok && submit.error && <p className="text-sm text-red-600 dark:text-red-400">{submit.error}</p>}
             <details>
-              <summary className="cursor-pointer select-none text-xs font-medium text-[var(--muted)] hover:text-teal-600 dark:hover:text-teal-400">Raw JSON (submit + latest status)</summary>
+              <summary className="cursor-pointer select-none text-xs font-medium text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400">Raw JSON (submit + latest status)</summary>
               <div className="mt-3 space-y-3">
                 <JsonBlock value={submit.raw} max="max-h-64" />
                 {status && <JsonBlock value={status.raw} max="max-h-64" />}
@@ -133,7 +133,7 @@ function Metric({ label, value, tone }: { label: string; value: number; tone: "e
   const tones = {
     emerald: "text-emerald-600 dark:text-emerald-400",
     amber: "text-amber-600 dark:text-amber-400",
-    teal: "text-teal-600 dark:text-teal-400",
+    teal: "text-accent-600 dark:text-accent-400",
     zinc: "text-[var(--fg)]",
   };
   return (

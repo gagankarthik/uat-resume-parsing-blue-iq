@@ -58,7 +58,7 @@ export function WebhooksPanel() {
                 onClick={() => toggle(ev)}
                 className={cn(
                   "rounded-lg border px-3 py-1.5 font-mono text-xs font-medium transition-all",
-                  on ? "border-teal-500 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300" : "border-[var(--line)] text-[var(--muted)] hover:border-teal-400",
+                  on ? "border-accent-500 bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300" : "border-[var(--line)] text-[var(--muted)] hover:border-accent-400",
                 )}
               >
                 {on ? "✓ " : ""}{ev}
@@ -88,7 +88,7 @@ export function WebhooksPanel() {
             <code className="font-mono text-[13px] text-[var(--muted)]">/api/v1/webhooks</code>
             {list.result && <StatusPill status={list.result.status} ms={list.result.ms} />}
           </div>
-          <button onClick={refresh} className="text-xs font-medium text-teal-600 hover:underline dark:text-teal-400">{list.loading ? "Refreshing…" : "Refresh"}</button>
+          <button onClick={refresh} className="text-xs font-medium text-accent-600 hover:underline dark:text-accent-400">{list.loading ? "Refreshing…" : "Refresh"}</button>
         </div>
 
         {hooks.length === 0 ? (
@@ -116,7 +116,7 @@ export function WebhooksPanel() {
 
         {list.result && (
           <details className="mt-4">
-            <summary className="cursor-pointer select-none text-xs font-medium text-[var(--muted)] hover:text-teal-600 dark:hover:text-teal-400">Raw JSON</summary>
+            <summary className="cursor-pointer select-none text-xs font-medium text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400">Raw JSON</summary>
             <div className="mt-3"><JsonBlock value={list.result.raw} max="max-h-64" /></div>
           </details>
         )}

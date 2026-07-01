@@ -60,7 +60,7 @@ export function FeedbackPanel() {
 
       <div className="mb-3 flex items-center justify-between">
         <Label>Job ID</Label>
-        <button onClick={loadSample} className="text-xs font-medium text-teal-600 hover:underline dark:text-teal-400">Load sample</button>
+        <button onClick={loadSample} className="text-xs font-medium text-accent-600 hover:underline dark:text-accent-400">Load sample</button>
       </div>
       <Input value={jobId} onChange={(e) => setJobId(e.target.value)} placeholder="01J3K5M2N4P6Q8R0S2T4U6V8W0" className="mb-4 font-mono" />
 

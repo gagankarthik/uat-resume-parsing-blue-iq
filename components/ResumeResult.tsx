@@ -56,10 +56,10 @@ function Section({
       style={{ animationDelay: `${delay}ms` }}
     >
       <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-        <span className="h-3.5 w-1 rounded-full bg-gradient-to-b from-teal-400 to-emerald-500" />
+        <span className="h-3.5 w-1 rounded-full bg-accent-600" />
         {title}
         {typeof count === "number" && (
-          <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+          <span className="rounded-full bg-accent-50 px-2 py-0.5 text-[11px] font-semibold text-accent-700 dark:bg-accent-900/40 dark:text-accent-300">
             {count}
           </span>
         )}
@@ -177,15 +177,15 @@ export function ResumeResult({
         )}
         <button
           onClick={() => setRaw((v) => !v)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--bg-elev)] px-2.5 py-1 text-xs font-medium text-[var(--fg)] transition-colors hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--bg-elev)] px-2.5 py-1 text-xs font-medium text-[var(--fg)] transition-colors hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400"
         >
-          <span className={"h-1.5 w-1.5 rounded-full " + (raw ? "bg-teal-500" : "bg-zinc-400")} />
+          <span className={"h-1.5 w-1.5 rounded-full " + (raw ? "bg-accent-500" : "bg-zinc-400")} />
           {raw ? "Structured view" : "Raw JSON"}
         </button>
       </div>
 
       {raw ? (
-        <pre className="scroll-fine fade-in max-h-[34rem] overflow-auto rounded-2xl border border-teal-900/40 bg-[#06100e] p-4 font-mono text-xs leading-relaxed text-teal-50 shadow-inner">
+        <pre className="scroll-fine fade-in max-h-[34rem] overflow-auto rounded-2xl border border-accent-900/40 bg-[#06100e] p-4 font-mono text-xs leading-relaxed text-accent-50 shadow-inner">
           {JSON.stringify(data, null, 2)}
         </pre>
       ) : (
@@ -214,7 +214,7 @@ export function ResumeResult({
                 {data.experience.map((e, i) => (
                   <li
                     key={i}
-                    className="rounded-2xl border border-[var(--line)] bg-[var(--bg)]/40 p-4 transition-colors hover:border-teal-300/70 dark:hover:border-teal-800/70"
+                    className="rounded-2xl border border-[var(--line)] bg-[var(--bg)]/40 p-4 transition-colors hover:border-accent-300/70 dark:hover:border-accent-800/70"
                   >
                     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                       <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -222,7 +222,7 @@ export function ResumeResult({
                       </p>
                       <p className="font-mono text-xs text-[var(--muted)]">
                         {fmtDate(e.start_date)} – {fmtDate(e.end_date)}
-                        {e.is_current && <span className="ml-1 font-sans text-teal-600 dark:text-teal-400">· current</span>}
+                        {e.is_current && <span className="ml-1 font-sans text-accent-600 dark:text-accent-400">· current</span>}
                       </p>
                     </div>
                     {e.location && <p className="mt-0.5 text-xs text-zinc-500">{e.location}</p>}
@@ -281,7 +281,7 @@ export function ResumeResult({
             <Chips items={data.skills} tone="info" />
             {skillsValidation && (
               <p className="mt-2.5 text-xs text-[var(--muted)]">
-                <span className="font-semibold text-teal-600 dark:text-teal-400">
+                <span className="font-semibold text-accent-600 dark:text-accent-400">
                   {skillsValidation.recognized_count}/{skillsValidation.total}
                 </span>{" "}
                 recognized in healthcare taxonomy
