@@ -145,6 +145,78 @@ export interface JobStatusResponse {
   error: string | null;
 }
 
+export interface RetryResponse extends ParseResponse {
+  original_job_id: string;
+  retry_count: number;
+}
+
+// ── Batch ─────────────────────────────────────────────────────────────────────
+export interface BatchSkipped {
+  filename: string;
+  reason: string;
+}
+export interface BatchSubmitResponse {
+  batch_id: string;
+  total: number;
+  skipped: number;
+  skipped_files: BatchSkipped[];
+  job_ids: string[];
+  status: string;
+  poll_url: string;
+}
+export interface BatchStatusResponse {
+  batch_id: string;
+  status: string; // processing | completed | partial | failed
+  total: number;
+  completed: number;
+  failed: number;
+  processing: number;
+  created_at: string;
+  completed_at: string | null;
+}
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+export interface FeedbackResponse {
+  feedback_id: string;
+  job_id: string;
+  status: string; // accepted
+  changed: boolean;
+  changed_fields: string[];
+  created_at: string;
+}
+
+// ── Webhooks ──────────────────────────────────────────────────────────────────
+export type WebhookEvent = "parse.completed" | "parse.failed" | "batch.completed";
+export const WEBHOOK_EVENTS: WebhookEvent[] = ["parse.completed", "parse.failed", "batch.completed"];
+export interface WebhookResponse {
+  webhook_id: string;
+  url: string;
+  events: string[];
+  hmac_secret?: string | null;
+  status: string; // active | disabled
+  created_at: string;
+}
+
+// ── Health ────────────────────────────────────────────────────────────────────
+export interface HealthResponse {
+  status: string; // ok | degraded
+  version: string;
+  environment: string;
+  latency_ms?: number | null;
+  dependencies?: Record<string, string> | null;
+}
+
+// ── Large-file upload (presigned) ─────────────────────────────────────────────
+export interface UploadUrlResponse {
+  job_id: string;
+  upload_url: string;
+  fields: Record<string, string>;
+  s3_key: string;
+  max_file_size_mb: number;
+  expires_in_seconds: number;
+  parse_url: string;
+}
+
 export interface ApiErrorBody {
   error: { status_code?: number; error_code?: string; detail: string; hint?: string; request_id?: string };
 }

@@ -45,9 +45,9 @@ export default function RootLayout({
         </div>
 
         <NavBar />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:py-14">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-12">{children}</main>
 
-        <footer className="mx-auto w-full max-w-5xl px-4 pb-8 pt-4 text-center text-xs text-[var(--muted)]">
+        <footer className="mx-auto w-full max-w-6xl px-4 pb-8 pt-4 text-center text-xs text-[var(--muted)]">
           Blue-IQ Résumé Parser · internal UAT console
         </footer>
       </body>
