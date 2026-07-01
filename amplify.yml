@@ -1,0 +1,32 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Next.js 16 requires Node 20+. Pin it so the build matches local dev.
+        - nvm install 20 && nvm use 20
+        - npm ci --cache .npm --prefer-offline
+    build:
+      commands:
+        # Amplify exposes console env vars to the BUILD shell but NOT to the
+        # Next.js SSR compute at request time. Writing them into .env.production
+        # makes both the public vars (inlined into the client bundle) AND the
+        # server-only secrets available at runtime, since Next.js loads
+        # .env.production on the server too.
+        #
+        # Server-side needs: RESUME_PARSER_API_KEY (proxy), ADMIN_EMAILS (admin
+        # gate), DYNAMODB_TABLE_* (admin viewer). Public/build+server:
+        # NEXT_PUBLIC_* (API base URL, Cognito pool, AWS region/creds for scans).
+        - env | grep -E '^(NEXT_PUBLIC_|RESUME_PARSER_API_KEY=|ADMIN_EMAILS=|DYNAMODB_TABLE_)' >> .env.production || true
+        - npm run build
+  artifacts:
+    # Amplify auto-detects the Next.js SSR (WEB_COMPUTE) platform and serves the
+    # .next output via managed compute — do not change to static export.
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .next/cache/**/*
+      - .npm/**/*
+      - node_modules/**/*

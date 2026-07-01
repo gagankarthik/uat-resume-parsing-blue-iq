@@ -1,11 +1,10 @@
 # Resume Parser — UAT Console
 
-Internal user-acceptance-testing console for the resume-parser API. Upload a
-résumé and watch it turn into structured JSON — exactly what a client integration
-receives. Sync and async (OCR) jobs both work.
-
-There is **nothing to configure in the UI**: just drag in a résumé. The API base
-URL and key live only on the server, so the browser never sees the key.
+Internal user-acceptance-testing console for the resume-parser API. Sign in, then
+exercise every endpoint — parse, batch, jobs, feedback, webhooks, health — with
+live requests, real status codes, and latency. Operators also get a read-only
+DynamoDB data viewer. The API base URL and key live only on the server, so the
+browser never sees the key.
 
 ## Setup
 
@@ -34,6 +33,34 @@ npm run dev                  # http://localhost:3000
 - **`/admin` (operators only).** Emails in `ADMIN_EMAILS` get a read-only viewer
   of the live resume-parser DynamoDB tables (companies, API keys, audit logs,
   jobs, batches, webhooks, feedback) — table + raw-JSON views with filtering.
+
+## Deploy (AWS Amplify)
+
+The app is a Next.js **SSR** app (server components, auth, API routes), so it must
+run on Amplify's managed compute — do **not** switch to static export. The build
+spec lives in [`amplify.yml`](./amplify.yml) (Node 20, writes console env vars into
+`.env.production` so they're available to the SSR runtime).
+
+1. Amplify Console → **New app → Host web app** → connect this repo's `main` branch.
+   Amplify auto-detects Next.js SSR (WEB_COMPUTE) and picks up `amplify.yml`.
+2. **App settings → Environment variables** — set all of these (same values as
+   `.env.local`):
+
+   | Variable | Notes |
+   |---|---|
+   | `NEXT_PUBLIC_API_BASE_URL` | `https://api.parsinglab.blue-iq.ai` |
+   | `RESUME_PARSER_API_KEY` | server-only; sent upstream as `X-API-Key` |
+   | `NEXT_PUBLIC_COGNITO_USER_POOL_ID` / `NEXT_PUBLIC_COGNITO_CLIENT_ID` | Cognito sign-in |
+   | `ADMIN_EMAILS` | comma-separated operator emails |
+   | `NEXT_PUBLIC_AWS_REGION` | e.g. `us-east-2` |
+   | `NEXT_PUBLIC_AWS_ACCESS_KEY_ID` / `NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY` | server-side DynamoDB scans — use a **read-only, DynamoDB-scoped** key |
+   | `DYNAMODB_TABLE_*` | optional overrides (defaults to `resume-parser-*`) |
+
+3. Deploy. Each push to `main` rebuilds automatically. After changing env vars,
+   trigger a fresh build (env is baked into `.env.production` at build time).
+
+> Security: the DynamoDB credentials are read **server-side only**. Prefer a key
+> scoped to `dynamodb:Scan` on the `resume-parser-*` tables — never an admin key.
 
 ## Architecture
 
