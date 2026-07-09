@@ -30,6 +30,7 @@ const ICON_PATHS = {
     "M19.5 14.25v-2.63c0-4.13-3-7.62-7-8.31M19.5 14.25v4.5a2.25 2.25 0 0 1-2.25 2.25h-10.5A2.25 2.25 0 0 1 4.5 18.75V5.25A2.25 2.25 0 0 1 6.75 3h5.53M19.5 14.25h-4.13a2.25 2.25 0 0 1-2.25-2.25V7.87M8.25 8.25h1.5m-1.5 3h4.5m-4.5 3h6",
   code: "M17.25 6.75 22.5 12l-5.25 5.25M6.75 17.25 1.5 12l5.25-5.25M14.25 3.75l-4.5 16.5",
   list: "M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.008v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.008v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.008v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z",
+  info: "M11.25 11.25l.04-.02a.75.75 0 0 1 1.06.74l-.53 2.56a.75.75 0 0 0 1.06.74l.04-.02M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z",
 } as const;
 type IconName = keyof typeof ICON_PATHS;
 
@@ -407,6 +408,39 @@ export function ResumeResult({
               <ul className="list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300">
                 {data.publications.map((pub, i) => (
                   <li key={i}>{pub}</li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          {data.extraction_notes && data.extraction_notes.length > 0 && (
+            <Section
+              title="Extraction Notes"
+              icon="info"
+              count={data.extraction_notes.length}
+              delay={540}
+            >
+              <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                Why the parser assigned or left out an ambiguous value. Correct any of these via
+                feedback to improve future parses.
+              </p>
+              <ul className="space-y-2">
+                {data.extraction_notes.map((n, i) => (
+                  <li
+                    key={i}
+                    className="rounded-md border border-amber-200 bg-amber-50 p-2.5 text-sm dark:border-amber-900/50 dark:bg-amber-950/30"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <code className="font-mono text-xs text-amber-800 dark:text-amber-300">
+                        {n.field}
+                      </code>
+                      <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                        {n.value === null ? "left null" : `= ${n.value}`} · conf{" "}
+                        {n.confidence.toFixed(2)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-zinc-700 dark:text-zinc-300">{n.reason}</p>
+                  </li>
                 ))}
               </ul>
             </Section>

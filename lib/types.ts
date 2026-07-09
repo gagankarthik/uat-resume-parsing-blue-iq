@@ -102,6 +102,17 @@ export interface Project {
   url: string | null;
 }
 
+// An explainable extraction decision — why a value was assigned or (more often)
+// deliberately left null. Lets a reviewer see the parser's reasoning (e.g. a bed
+// count that couldn't be tied to one of several facilities) and correct it via
+// feedback rather than wonder why it's missing.
+export interface ExtractionNote {
+  field: string;
+  value: string | null;
+  confidence: number;
+  reason: string;
+}
+
 export interface ParsedResume {
   personal_info: PersonalInfo | null;
   experience: Experience[];
@@ -113,6 +124,8 @@ export interface ParsedResume {
   references?: Reference[];
   awards?: string[];
   publications?: string[];
+  professional_associations?: string[];
+  extraction_notes?: ExtractionNote[];
 }
 
 export interface ConfidenceScores {
