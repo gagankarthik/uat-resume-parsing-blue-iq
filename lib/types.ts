@@ -64,9 +64,31 @@ export interface Experience {
   charge_experience?: string | null;
   charting_system?: string | null;
   shift?: string | null;
+  employment_type?: string | null; // Full-time | Part-time | PRN
+  patient_load?: string | null; // patient count (ratios go in nurse_to_patient_ratio)
   reason_for_leaving?: string | null;
+  gap_warning?: boolean; // system-set: >90-day gap before this role
   description: string[]; // one item per responsibility/bullet
   achievements: string[];
+}
+
+// A student clinical rotation / practicum — kept separate from paid experience.
+export interface ClinicalRotation {
+  institution: string | null;
+  unit: string | null;
+  role: string | null;
+  hours: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  description: string[];
+}
+
+// Compliance disclosures scanned from the résumé + a rollup risk flag.
+export interface ComplianceInfo {
+  covid_vaccination: boolean | null;
+  tb_test: boolean | null;
+  annual_physical: boolean | null;
+  compliance_risk: boolean;
 }
 
 export interface Reference {
@@ -84,6 +106,7 @@ export interface Education {
   start_year: number | null;
   graduation_year: number | null;
   gpa: string | null;
+  tier?: string | null; // ADN | Diploma_in_Nursing | BSN (nursing degrees)
 }
 
 export interface Certification {
@@ -125,6 +148,8 @@ export interface ParsedResume {
   awards?: string[];
   publications?: string[];
   professional_associations?: string[];
+  clinical_rotations?: ClinicalRotation[];
+  compliance?: ComplianceInfo | null;
   extraction_notes?: ExtractionNote[];
 }
 
