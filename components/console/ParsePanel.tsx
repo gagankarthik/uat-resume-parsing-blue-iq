@@ -33,7 +33,11 @@ export function ParsePanel() {
       const jr = await getJobStatus(jobId);
       if (!jr.ok) return jr as CallResult<Body>;
       const st = jr.data?.status;
-      if (st === "completed" || st === "failed") return jr as CallResult<Body>;
+      // Terminal states: "partial" is terminal too (degraded parse — data is
+      // present but flagged for review), so the loop must stop on it or it
+      // would poll until timeout.
+      if (st === "completed" || st === "partial" || st === "failed")
+        return jr as CallResult<Body>;
     }
     return { ok: false, status: 0, ms: 0, data: null, error: "Timed out waiting for the result.", raw: { error: { detail: "poll timeout" } } };
   }, []);

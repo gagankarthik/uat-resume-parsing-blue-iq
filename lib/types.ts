@@ -133,7 +133,11 @@ export interface SkillsValidation {
   groups: Record<string, string>;
 }
 
-export type JobStatus = "pending" | "processing" | "completed" | "failed";
+// "partial" is a terminal success-with-caveats state: parsing degraded (e.g. the
+// AI step timed out) so `data` holds only what could be recovered and `warnings`
+// explains what needs human review. It is NOT "completed" — never treat it as a
+// clean parse.
+export type JobStatus = "pending" | "processing" | "completed" | "partial" | "failed";
 
 export interface ParseResponse {
   job_id: string;
