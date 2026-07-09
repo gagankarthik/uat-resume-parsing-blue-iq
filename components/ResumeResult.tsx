@@ -72,8 +72,17 @@ function Section({
 // Compact key/value grid for the optional "Edit Work History" fields — only the
 // values the parser actually captured are shown.
 function WorkDetails({ e }: { e: Experience }) {
+  const professionId =
+    e.profession_id != null
+      ? `#${e.profession_id}${
+          typeof e.profession_confidence === "number" ? ` · ${e.profession_confidence.toFixed(2)}` : ""
+        }`
+      : null;
+  const facilityId = e.facility_id != null ? `#${e.facility_id}` : null;
   const rows: [string, string | null | undefined][] = [
     ["Profession", e.profession],
+    ["Profession ID", professionId],
+    ["Facility ID", facilityId],
     ["Position held", e.position_held],
     ["Shift", e.shift],
     ["Charting system", e.charting_system],

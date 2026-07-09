@@ -21,7 +21,7 @@ export interface SpecialtyMatch {
   group?: string | null;
   confidence?: number;
   matched?: boolean;
-  match_tier?: "name" | "full_name" | "keywords" | "ai" | null;
+  match_tier?: "name" | "full_name" | "keywords" | "fuzzy" | "ai" | null;
 }
 
 export interface Experience {
@@ -39,6 +39,14 @@ export interface Experience {
   employer_phone?: string | null;
   // Clinical classification
   profession?: string | null;
+  // Platform profession id mapped from `profession` (e.g. RN → "1"), with the
+  // system's confidence it is correct (1.0 on an exact catalog match).
+  profession_id?: string | null;
+  profession_confidence?: number;
+  // Facility mapping — reserved; populated once the client's facilities dataset is
+  // wired. Null / 0.0 until then.
+  facility_id?: string | null;
+  facility_confidence?: number;
   specialties?: SpecialtyMatch[];
   // Facility attributes
   service_type?: string | null;
