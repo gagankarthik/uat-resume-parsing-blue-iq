@@ -2,11 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { ResumeResult } from "@/components/ResumeResult";
 import { Button } from "@/components/ui";
-import { batchParse, getBatchStatus, type CallResult } from "@/lib/api";
-import type { BatchStatusResponse, BatchSubmitResponse } from "@/lib/types";
+import { batchParse, getBatchStatus, getJobStatus, type CallResult } from "@/lib/api";
+import type { BatchJob, BatchStatusResponse, BatchSubmitResponse, JobStatusResponse } from "@/lib/types";
 
 import { CopyButton, Dropzone, EndpointHeader, JsonBlock, StatusPill, humanSize } from "./shared";
+
+// One accepted file, paired with whatever the job endpoint returned for it.
+type FileResult = { job: BatchJob; res: CallResult<JobStatusResponse> };
 
 export function BatchPanel() {
   const [files, setFiles] = useState<File[]>([]);
@@ -14,11 +18,28 @@ export function BatchPanel() {
   const [submit, setSubmit] = useState<CallResult<BatchSubmitResponse> | null>(null);
   const [status, setStatus] = useState<CallResult<BatchStatusResponse> | null>(null);
   const [polling, setPolling] = useState(false);
+  const [results, setResults] = useState<FileResult[] | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  async function pollStatus(batchId: string) {
+  function reset() {
+    setFiles([]);
+    setSubmit(null);
+    setStatus(null);
+    setResults(null);
+  }
+
+  // The batch endpoint only reports counts. To actually SEE what came back, fetch
+  // each accepted file's job once the batch settles — that's the parsed résumé.
+  async function loadResults(jobs: BatchJob[]) {
+    const rows = await Promise.all(
+      jobs.map(async (job) => ({ job, res: await getJobStatus(job.job_id) })),
+    );
+    setResults(rows);
+  }
+
+  async function pollStatus(batchId: string, jobs: BatchJob[]) {
     setPolling(true);
     for (let i = 0; i < 200; i++) {
       const r = await getBatchStatus(batchId);
@@ -27,16 +48,18 @@ export function BatchPanel() {
       await new Promise((res) => (timer.current = setTimeout(res, 2500)));
     }
     setPolling(false);
+    await loadResults(jobs);
   }
 
   async function submitBatch() {
     if (files.length === 0) return;
     setSubmitting(true);
     setStatus(null);
+    setResults(null);
     const r = await batchParse(files);
     setSubmit(r);
     setSubmitting(false);
-    if (r.ok && r.data?.batch_id) pollStatus(r.data.batch_id);
+    if (r.ok && r.data?.batch_id) pollStatus(r.data.batch_id, r.data.jobs ?? []);
   }
 
   const st = status?.data;
@@ -53,7 +76,7 @@ export function BatchPanel() {
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/70 p-4 backdrop-blur">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-medium">{files.length} file{files.length > 1 ? "s" : ""} selected</p>
-            <button onClick={() => { setFiles([]); setSubmit(null); setStatus(null); }} className="text-xs text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400">Clear</button>
+            <button onClick={reset} className="text-xs text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400">Clear</button>
           </div>
           <ul className="scroll-fine max-h-40 space-y-1.5 overflow-auto">
             {files.map((f, i) => (
@@ -112,6 +135,8 @@ export function BatchPanel() {
                     </ul>
                   </div>
                 )}
+
+                {results && <Results rows={results} />}
               </>
             )}
             {!submit.ok && submit.error && <p className="text-sm text-red-600 dark:text-red-400">{submit.error}</p>}
@@ -125,6 +150,61 @@ export function BatchPanel() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const JOB_TONES: Record<string, string> = {
+  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+  partial: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+  failed: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300",
+};
+
+function JobBadge({ status }: { status: string }) {
+  const tone = JOB_TONES[status] ?? "bg-[var(--line)] text-[var(--muted)]";
+  return (
+    <span className={"rounded-full px-2 py-0.5 text-[11px] font-medium " + tone}>{status}</span>
+  );
+}
+
+/** Per-file outcomes: the parsed résumé for each accepted file, expandable. */
+function Results({ rows }: { rows: FileResult[] }) {
+  if (rows.length === 0) return null;
+
+  return (
+    <div>
+      <p className="mb-2 text-sm font-medium">Parsed results</p>
+      <ul className="space-y-2">
+        {rows.map(({ job, res }) => {
+          const data = res.data?.data ?? null;
+          const jobStatus = res.ok ? (res.data?.status ?? "unknown") : "failed";
+          const error = res.data?.error ?? res.error;
+
+          return (
+            <li key={job.job_id} className="overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg)]/50">
+              <details>
+                <summary className="flex cursor-pointer select-none items-center justify-between gap-3 px-3 py-2">
+                  <span className="truncate text-sm">{job.filename}</span>
+                  <JobBadge status={jobStatus} />
+                </summary>
+                <div className="border-t border-[var(--line)] p-4">
+                  {data ? (
+                    <ResumeResult
+                      data={data}
+                      confidence={res.data?.confidence ?? null}
+                      skillsValidation={res.data?.skills_validation ?? null}
+                    />
+                  ) : (
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {error ?? "No data returned for this file."}
+                    </p>
+                  )}
+                </div>
+              </details>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

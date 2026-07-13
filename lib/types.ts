@@ -192,6 +192,9 @@ export interface JobStatusResponse {
   data: ParsedResume | null;
   confidence: ConfidenceScores | null;
   skills_validation?: SkillsValidation | null;
+  // A degraded parse: `data` is present but needs human review.
+  partial: boolean;
+  warnings: string[];
   error: string | null;
 }
 
@@ -205,11 +208,18 @@ export interface BatchSkipped {
   filename: string;
   reason: string;
 }
+export interface BatchJob {
+  job_id: string;
+  filename: string;
+}
 export interface BatchSubmitResponse {
   batch_id: string;
   total: number;
   skipped: number;
   skipped_files: BatchSkipped[];
+  // Accepted files paired with their job ID, so a result can be matched back to the
+  // file it came from. `job_ids` is the same IDs without the filenames.
+  jobs: BatchJob[];
   job_ids: string[];
   status: string;
   poll_url: string;
