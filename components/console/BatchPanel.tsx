@@ -1,22 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { ResumeResult } from "@/components/ResumeResult";
-import { Button } from "@/components/ui";
+import { BackButton, Button, EmptyState, Input, Select, Tabs } from "@/components/ui";
 import { batchParse, getBatchStatus, getJobStatus, type CallResult } from "@/lib/api";
+import {
+  type HistoryRun,
+  getRunsServerSnapshot,
+  getRunsSnapshot,
+  saveRun,
+  subscribeRuns,
+} from "@/lib/history";
 import type {
   BatchJob,
   BatchSkipped,
   BatchStatusResponse,
   BatchSubmitResponse,
   JobStatusResponse,
+  ParsedResume,
 } from "@/lib/types";
 
+import { findIssues } from "@/lib/review";
+
+import { CompareView, IssuesList, RecordEditor } from "./review";
 import { CopyButton, Dropzone, EndpointHeader, JsonBlock, StatusPill, humanSize } from "./shared";
 
 // One accepted file, paired with whatever the job endpoint has returned for it so far.
 type FileResult = { job: BatchJob; res: CallResult<JobStatusResponse> | null };
+
+type View = "parsed" | "issues" | "edit" | "json";
 
 // A row in the left-hand list. Skipped files are shown too - they were part of the
 // submission, and a console that silently omits them is lying about what you sent.
@@ -38,8 +51,26 @@ export function BatchPanel() {
   const [polling, setPolling] = useState(false);
   const [results, setResults] = useState<Record<string, FileResult>>({});
   const [selected, setSelected] = useState<string | null>(null);
-  const [view, setView] = useState<"parsed" | "json">("parsed");
+  const [view, setView] = useState<View>("parsed");
   const [filter, setFilter] = useState("");
+
+  // Compare mode: pick a second file and diff it against the selected one.
+  const [compareTo, setCompareTo] = useState<string | null>(null);
+
+  // On a phone the list and the detail cannot share the screen, so we show one at a
+  // time and give the detail a Back control. On >= lg both render side by side and
+  // this flag is ignored entirely.
+  const [mobilePane, setMobilePane] = useState<"list" | "detail">("list");
+
+  // Past runs, restored from localStorage. A 50-file batch used to vanish on refresh,
+  // and the API TTLs async results out of DynamoDB after an hour - so there was no way
+  // to get them back.
+  //
+  // localStorage is an external store, so this is useSyncExternalStore rather than
+  // "read it in an effect and setState" (React 19 rejects setState-in-effect: it is a
+  // cascading render). It also means another tab writing history updates this one.
+  const history = useSyncExternalStore(subscribeRuns, getRunsSnapshot, getRunsServerSnapshot);
+  const [showHistory, setShowHistory] = useState(false);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelled = useRef(false);
@@ -56,7 +87,61 @@ export function BatchPanel() {
     setStatus(null);
     setResults({});
     setSelected(null);
+    setCompareTo(null);
     setFilter("");
+  }
+
+  /** Re-open a finished run from history. No network calls - it is all local. */
+  function openRun(run: HistoryRun) {
+    cancelled.current = true;
+    setShowHistory(false);
+    setFiles([]);
+    setSelected(null);
+    setCompareTo(null);
+    setStatus(null);
+    setSubmit({
+      ok: true,
+      status: 202,
+      ms: 0,
+      error: null,
+      raw: null,
+      data: {
+        batch_id: run.batch_id,
+        total: run.total,
+        skipped: run.skipped,
+        skipped_files: [],
+        jobs: run.files.map((f) => ({ job_id: f.job_id, filename: f.filename })),
+        job_ids: run.files.map((f) => f.job_id),
+        status: "completed",
+        poll_url: `/api/v1/resume/batch/${run.batch_id}`,
+      },
+    } as CallResult<BatchSubmitResponse>);
+    setResults(
+      Object.fromEntries(
+        run.files.map((f) => [
+          f.job_id,
+          {
+            job: { job_id: f.job_id, filename: f.filename },
+            res: {
+              ok: true,
+              status: 200,
+              ms: 0,
+              error: null,
+              raw: f.raw ?? null,
+              data: {
+                job_id: f.job_id,
+                status: f.status,
+                data: f.data,
+                confidence: f.confidence,
+                partial: f.partial ?? false,
+                warnings: f.warnings ?? [],
+                error: null,
+              },
+            },
+          } as FileResult,
+        ]),
+      ),
+    );
   }
 
   /**
@@ -100,6 +185,29 @@ export function BatchPanel() {
       await new Promise((res) => (timer.current = setTimeout(res, 2500)));
     }
     setPolling(false);
+
+    // Persist the finished run so a refresh does not throw it away.
+    if (!cancelled.current) {
+      saveRun({
+        batch_id: batchId,
+        at: Date.now(),
+        total: jobs.length,
+        skipped: 0,
+        files: jobs.map((job) => {
+          const r = live[job.job_id]?.res;
+          return {
+            job_id: job.job_id,
+            filename: job.filename,
+            status: r?.data?.status ?? "unknown",
+            partial: r?.data?.partial,
+            warnings: r?.data?.warnings,
+            data: r?.data?.data ?? null,
+            confidence: r?.data?.confidence ?? null,
+            raw: r?.raw,
+          };
+        }),
+      });
+    }
   }
 
   async function submitBatch() {
@@ -146,6 +254,15 @@ export function BatchPanel() {
   const activeKey = selected ?? fallback;
   const active = activeKey ? results[activeKey] : undefined;
 
+  // Every OTHER file with a parsed record is a candidate to diff against.
+  const compareOptions = useMemo(
+    () =>
+      Object.values(results)
+        .filter((r) => r.job.job_id !== activeKey && r.res?.data?.data)
+        .map((r) => ({ id: r.job.job_id, label: r.job.filename })),
+    [results, activeKey],
+  );
+
   const st = status?.data;
   const done = st ? st.completed + st.failed : 0;
   const pct = st && st.total ? Math.round((done / st.total) * 100) : 0;
@@ -158,6 +275,24 @@ export function BatchPanel() {
         title="Batch parse"
         blurb="Upload many resumes at once. The API accepts them, returns a batch ID and a job ID per file, and parses asynchronously. Every file appears in the list below and fills in as it finishes - pick one to inspect its parsed record or raw JSON."
       />
+
+      {/* History: past runs survive a refresh (localStorage), which matters because the
+          API TTLs async job results out of DynamoDB after an hour. */}
+      {history.length > 0 && (
+        <div className="mb-4 flex items-center justify-between">
+          <button
+            onClick={() => setShowHistory((s) => !s)}
+            className="text-xs font-medium text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400"
+          >
+            {showHistory ? "Hide" : "Show"} past runs ({history.length})
+          </button>
+        </div>
+      )}
+      {showHistory && (
+        <div className="mb-5">
+          <HistoryList runs={history} onOpen={openRun} />
+        </div>
+      )}
 
       {files.length === 0 && !submit ? (
         <Dropzone
@@ -226,7 +361,7 @@ export function BatchPanel() {
 
             <div className="space-y-4 p-4">
               {submit.data && (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <Metric label="Accepted" value={submit.data.total} tone="emerald" />
                   <Metric
                     label="Skipped"
@@ -267,7 +402,7 @@ export function BatchPanel() {
 
           {/* Master-detail: every resume on the left, the selected one on the right. */}
           {rows.length > 0 && (
-            <div className="grid gap-4 lg:grid-cols-[minmax(15rem,20rem)_1fr]">
+            <div className="grid gap-4 lg:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)]">
               <FileList
                 rows={visible}
                 total={rows.length}
@@ -277,14 +412,72 @@ export function BatchPanel() {
                 onSelect={(key) => {
                   setSelected(key);
                   setView("parsed");
+                  setMobilePane("detail");
                 }}
+                className={mobilePane === "detail" ? "hidden lg:block" : "block"}
               />
-              <DetailPane result={active} view={view} onView={setView} />
+              <DetailPane
+                result={active}
+                view={view}
+                onView={setView}
+                compareOptions={compareOptions}
+                compareTo={compareTo}
+                onCompareTo={setCompareTo}
+                results={results}
+                onBack={() => setMobilePane("list")}
+                className={mobilePane === "list" ? "hidden lg:block" : "block"}
+              />
             </div>
           )}
         </div>
       )}
     </div>
+  );
+}
+
+/** Past runs, restored from localStorage. */
+function HistoryList({
+  runs,
+  onOpen,
+}: {
+  runs: HistoryRun[];
+  onOpen: (run: HistoryRun) => void;
+}) {
+  if (runs.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center text-sm text-[var(--muted)]">
+        No past runs yet. Submit a batch and it will be kept here.
+      </p>
+    );
+  }
+  return (
+    <ul className="divide-y divide-[var(--line)] overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/80">
+      {runs.map((run) => (
+        <li key={run.batch_id}>
+          <button
+            onClick={() => onOpen(run)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg)]/60"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">
+                {run.files.length} file{run.files.length === 1 ? "" : "s"}
+                <span className="ml-2 text-[var(--muted)]">
+                  {run.files
+                    .map((f) => f.data?.personal_info?.full_name)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join(", ") || "no names extracted"}
+                </span>
+              </p>
+              <p className="truncate font-mono text-[11px] text-[var(--muted)]">{run.batch_id}</p>
+            </div>
+            <span className="shrink-0 text-xs text-[var(--muted)]">
+              {new Date(run.at).toLocaleString()}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -296,6 +489,7 @@ function FileList({
   filter,
   onFilter,
   onSelect,
+  className,
 }: {
   rows: Row[];
   total: number;
@@ -303,18 +497,25 @@ function FileList({
   filter: string;
   onFilter: (v: string) => void;
   onSelect: (key: string) => void;
+  className?: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/80 backdrop-blur">
+    <div
+      className={
+        "overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/80 backdrop-blur " +
+        (className ?? "")
+      }
+    >
       <div className="border-b border-[var(--line)] p-3">
-        <input
+        <Input
           value={filter}
           onChange={(e) => onFilter(e.target.value)}
           placeholder={`Filter ${total} file${total > 1 ? "s" : ""}...`}
-          className="w-full rounded-lg border border-[var(--line)] bg-[var(--bg)]/60 px-3 py-1.5 text-sm outline-none placeholder:text-[var(--muted)] focus:border-accent-500"
+          className="h-9 rounded-lg text-sm"
+          aria-label="Filter files"
         />
       </div>
-      <ul className="scroll-fine max-h-[34rem] divide-y divide-[var(--line)] overflow-auto">
+      <ul className="scroll-fine max-h-[60vh] divide-y divide-[var(--line)] overflow-auto lg:max-h-[34rem]">
         {rows.length === 0 && (
           <li className="px-3 py-6 text-center text-sm text-[var(--muted)]">No files match.</li>
         )}
@@ -378,48 +579,103 @@ function FileList({
   );
 }
 
-/** Right pane - the selected resume, as a parsed record or as raw JSON. */
+/** Right pane - the selected resume: parsed record, issues, editor, raw JSON, or a diff. */
 function DetailPane({
   result,
   view,
   onView,
+  compareOptions,
+  compareTo,
+  onCompareTo,
+  results,
+  onBack,
+  className,
 }: {
   result: FileResult | undefined;
-  view: "parsed" | "json";
-  onView: (v: "parsed" | "json") => void;
+  view: View;
+  onView: (v: View) => void;
+  compareOptions: { id: string; label: string }[];
+  compareTo: string | null;
+  onCompareTo: (id: string | null) => void;
+  results: Record<string, FileResult>;
+  onBack: () => void;
+  className?: string;
 }) {
   if (!result) {
     return (
-      <div className="flex min-h-[20rem] items-center justify-center rounded-2xl border border-dashed border-[var(--line)] bg-[var(--bg-elev)]/40 p-6">
-        <p className="text-sm text-[var(--muted)]">Select a file to see its parsed record.</p>
-      </div>
+      <EmptyState
+        className={className}
+        title="Nothing selected"
+        hint="Pick a file from the list to see its parsed record, its issues, or the raw JSON."
+      />
     );
   }
 
   const res = result.res;
   const job = res?.data;
-  const data = job?.data ?? null;
+  const data: ParsedResume | null = job?.data ?? null;
   const error = job?.error ?? res?.error;
 
+  const other = compareTo ? results[compareTo] : undefined;
+  const otherData = other?.res?.data?.data ?? null;
+
+  const issueCount = data ? findIssues(data, job?.confidence ?? null, job?.warnings ?? []).length : 0;
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/80 shadow-lg shadow-black/5 backdrop-blur">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{result.job.filename}</p>
-          <p className="truncate font-mono text-[11px] text-[var(--muted)]">{result.job.job_id}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-[var(--line)] p-0.5">
-            <Tab active={view === "parsed"} onClick={() => onView("parsed")}>
-              Parsed
-            </Tab>
-            <Tab active={view === "json"} onClick={() => onView("json")}>
-              JSON
-            </Tab>
+    <div
+      className={
+        "overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/80 shadow-lg shadow-black/5 backdrop-blur " +
+        (className ?? "")
+      }
+    >
+      <div className="border-b border-[var(--line)] px-4 py-3">
+        {/* Back to the list - only on small screens, where the two panes cannot coexist. */}
+        <BackButton onClick={onBack} label="All files" className="-ml-2 mb-1.5 lg:hidden" />
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{result.job.filename}</p>
+            <p className="truncate font-mono text-[11px] text-[var(--muted)]">{result.job.job_id}</p>
           </div>
-          {res?.raw != null && <CopyButton text={JSON.stringify(res.raw, null, 2)} label="Copy JSON" />}
+          <div className="flex flex-wrap items-center gap-2">
+            <Tabs
+              value={view}
+              onChange={onView}
+              options={[
+                { id: "parsed", label: "Parsed" },
+                { id: "issues", label: "Issues", badge: issueCount },
+                { id: "edit", label: "Edit" },
+                { id: "json", label: "JSON" },
+              ]}
+            />
+            {res?.raw != null && <CopyButton text={JSON.stringify(res.raw, null, 2)} label="Copy JSON" />}
+          </div>
         </div>
       </div>
+
+      {/* Compare selector: diff this record against any other file in the batch. */}
+      {data && compareOptions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--line)] bg-[var(--bg)]/40 px-4 py-2 text-xs">
+          <span className="shrink-0 text-[var(--muted)]">Compare with</span>
+          <Select
+            value={compareTo ?? ""}
+            onChange={(e) => onCompareTo(e.target.value || null)}
+            aria-label="Compare with another file"
+            className="min-w-0 flex-1 sm:flex-none"
+          >
+            <option value="">- none -</option>
+            {compareOptions.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </Select>
+          {compareTo && (
+            <BackButton onClick={() => onCompareTo(null)} label="Clear" className="shrink-0" />
+          )}
+          {compareTo && !otherData && (
+            <span className="text-amber-600 dark:text-amber-400">that file has no parsed data</span>
+          )}
+        </div>
+      )}
 
       <div className="p-4">
         {!res ? (
@@ -429,8 +685,21 @@ function DetailPane({
               Parsing...
             </p>
           </div>
+        ) : compareTo && otherData && data ? (
+          <CompareView
+            left={{ label: result.job.filename, data }}
+            right={{ label: other?.job.filename ?? "other", data: otherData }}
+          />
         ) : view === "json" ? (
           <JsonBlock value={res.raw} max="max-h-[34rem]" />
+        ) : view === "issues" ? (
+          <IssuesList parsed={data} confidence={job?.confidence ?? null} warnings={job?.warnings ?? []} />
+        ) : view === "edit" ? (
+          data ? (
+            <RecordEditor jobId={result.job.job_id} original={data} />
+          ) : (
+            <p className="text-sm text-[var(--muted)]">Nothing to edit - this file has no parsed record.</p>
+          )
         ) : data ? (
           <>
             {job?.partial && job.warnings?.length > 0 && (
@@ -458,30 +727,6 @@ function DetailPane({
         )}
       </div>
     </div>
-  );
-}
-
-function Tab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={
-        "rounded-md px-2.5 py-1 text-xs font-medium transition-colors " +
-        (active
-          ? "bg-accent-600 text-white"
-          : "text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400")
-      }
-    >
-      {children}
-    </button>
   );
 }
 

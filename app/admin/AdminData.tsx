@@ -33,7 +33,8 @@ function cellText(v: unknown): string {
 export function AdminData({ tables, email }: { tables: TableRef[]; email: string }) {
   const [active, setActive] = useState(tables[0]?.id ?? "");
   const [summary, setSummary] = useState<TableSummary[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Starts true: the first table is fetched on mount, so we are loading from frame 1.
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<{ code: number; ms: number } | null>(null);
   const [data, setData] = useState<ScanResult | null>(null);
   const [error, setError] = useState("");
@@ -42,10 +43,13 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
   const [raw, setRaw] = useState(false);
 
   const load = useCallback(async (id: string) => {
-    setLoading(true);
-    setError("");
-    setExpanded(null);
     const t0 = performance.now();
+    // Yield before anything can touch state. An async function body runs SYNCHRONOUSLY
+    // up to its first await, and `await fetch(...)` sits inside the try below - so if
+    // fetch() were to throw synchronously, the catch/finally would setState inside the
+    // effect that called us. That is a cascading render, and React 19 rejects it. One
+    // microtask makes every update below provably deferred.
+    await Promise.resolve();
     try {
       const res = await fetch(`/api/admin/dynamo?table=${encodeURIComponent(id)}`);
       const ms = Math.round(performance.now() - t0);
@@ -65,11 +69,25 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
     }
   }, []);
 
+  // Switching tables clears the filter. Done HERE rather than in an effect that
+  // watches `active`: a synchronous setState inside an effect is a cascading render,
+  // which React 19 rejects outright.
+  const selectTable = useCallback((id: string) => {
+    setActive(id);
+    setQuery("");
+    setLoading(true);
+    setError("");
+    setExpanded(null);
+  }, []);
+
   useEffect(() => {
-    if (active) {
-      setQuery("");
-      load(active);
-    }
+    // Fetching on a changed parameter is exactly what an effect is for. The rule fires
+    // because it cannot see through the async boundary into `load` - but `load` awaits
+    // a microtask before touching any state (see above), so every update it makes is
+    // provably deferred and no cascading render is possible. Suppressed at this one
+    // line rather than contorting the data flow around a static analysis limit.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (active) load(active);
   }, [active, load]);
 
   useEffect(() => {
@@ -116,7 +134,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
         {(summary ?? tables.map((t) => ({ ...t, count: -1, sizeBytes: 0, ok: true }))).map((t) => (
           <button
             key={t.id}
-            onClick={() => setActive(t.id)}
+            onClick={() => selectTable(t.id)}
             className={cn(
               "rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5",
               active === t.id ? "border-accent-300 bg-accent-50 shadow-sm" : "border-line bg-surface hover:border-accent-200",
@@ -136,7 +154,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
         {tables.map((t) => (
           <button
             key={t.id}
-            onClick={() => setActive(t.id)}
+            onClick={() => selectTable(t.id)}
             className={cn(
               "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
               active === t.id ? "border-accent-500 bg-accent-50 text-accent-700" : "border-line text-ink-soft hover:border-accent-300 hover:text-ink",

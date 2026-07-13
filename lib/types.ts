@@ -37,14 +37,23 @@ export interface Experience {
   country?: string | null;
   zip_code?: string | null;
   employer_phone?: string | null;
+  // Platform geography ids. country/state resolve OFFLINE from the bundled geographies
+  // snapshot; city is a LIVE fuzzy lookup against the partner cities endpoint and stays
+  // null when the API key is not configured or nothing matched confidently.
+  country_id?: string | null;
+  country_confidence?: number;
+  state_id?: string | null;
+  state_confidence?: number;
+  city_id?: string | null;
+  city_confidence?: number;
   // Clinical classification
   profession?: string | null;
   // Platform profession id mapped from `profession` (e.g. RN -> "1"), with the
   // system's confidence it is correct (1.0 on an exact catalog match).
   profession_id?: string | null;
   profession_confidence?: number;
-  // Facility mapping - reserved; populated once the client's facilities dataset is
-  // wired. Null / 0.0 until then.
+  // Platform facility id, matched against the bundled facilities snapshot. Null when
+  // the employer did not map to a catalog facility - never a guess.
   facility_id?: string | null;
   facility_confidence?: number;
   specialties?: SpecialtyMatch[];
@@ -136,12 +145,27 @@ export interface ExtractionNote {
   reason: string;
 }
 
+/** A state licence, kept distinct from a certification (the parser draws that line). */
+export interface License {
+  name: string | null;
+  license_type?: string | null;
+  state?: string | null;
+  license_number?: string | null;
+  issued_date?: string | null;
+  expiry_date?: string | null;
+  is_compact?: boolean;
+  status?: string | null;
+}
+
 export interface ParsedResume {
   personal_info: PersonalInfo | null;
   experience: Experience[];
   education: Education[];
   skills: string[];
   certifications: Certification[];
+  // State licences. The API has always returned these; the console's types simply
+  // never declared them.
+  licenses?: License[];
   projects: Project[];
   languages: string[];
   references?: Reference[];

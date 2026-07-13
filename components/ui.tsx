@@ -2,7 +2,13 @@
 // cool paper, navy ink, cobalt accent. Pure Tailwind, no external deps.
 "use client";
 
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -110,6 +116,108 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
     <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 font-mono text-[0.7rem] font-medium ring-1 ring-inset", tones[tone])}>
       {children}
     </span>
+  );
+}
+
+/** Segmented tab switcher. Scrolls horizontally on narrow screens instead of wrapping. */
+export function Tabs<T extends string>({
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { id: T; label: string; badge?: number }[];
+  className?: string;
+}) {
+  return (
+    <div
+      role="tablist"
+      className={cn(
+        "scroll-fine flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-line-strong p-0.5",
+        className,
+      )}
+    >
+      {options.map((o) => {
+        const active = o.id === value;
+        return (
+          <button
+            key={o.id}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(o.id)}
+            className={cn(
+              "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+              active ? "bg-accent-700 text-[var(--surface)]" : "text-ink-soft hover:bg-black/[0.04] hover:text-ink",
+            )}
+          >
+            {o.label}
+            {typeof o.badge === "number" && o.badge > 0 && (
+              <span
+                className={cn(
+                  "rounded-full px-1.5 text-[10px] font-semibold",
+                  active ? "bg-white/20" : "bg-black/[0.06]",
+                )}
+              >
+                {o.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Select({ className, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={cn(
+        "h-9 max-w-full rounded-lg border border-line-strong bg-surface px-2.5 text-xs text-ink outline-none transition-colors",
+        "focus:border-accent-500 focus:ring-4 focus:ring-accent-500/10",
+        className,
+      )}
+      {...rest}
+    />
+  );
+}
+
+/**
+ * Back control for the mobile master-detail flow.
+ *
+ * On a phone the list and the detail cannot share the screen, so selecting a file
+ * swaps to the detail view - and without this there is no way back to the list except
+ * the browser button, which would leave the console entirely.
+ */
+export function BackButton({ onClick, label = "Back", className }: { onClick: () => void; label?: string; className?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-ink-soft transition-colors hover:bg-black/[0.04] hover:text-ink",
+        className,
+      )}
+    >
+      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {label}
+    </button>
+  );
+}
+
+export function EmptyState({ title, hint, className }: { title: string; hint?: string; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-[14rem] flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong p-6 text-center",
+        className,
+      )}
+    >
+      <p className="text-sm font-medium text-ink">{title}</p>
+      {hint && <p className="mt-1 max-w-sm text-sm text-ink-soft">{hint}</p>}
+    </div>
   );
 }
 
