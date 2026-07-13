@@ -90,12 +90,26 @@ function fileForm(field: string, files: File | File[]): FormData {
   return form;
 }
 
+// Every call here goes through /api/proxy, a Next.js route handler on Amplify
+// Hosting — whose SSR compute hard-kills any request at 30s and returns a bodyless
+// 504 (not configurable; `maxDuration` is not honored there). A complete parse does
+// not fit that window: a typical résumé's AI pass alone measures ~20s. So the
+// console NEVER asks the API to parse synchronously — it sends `async_only`, gets a
+// job id straight back, and polls. Dropping this flag re-introduces the 504.
+const ASYNC_ONLY = "async_only";
+
+function asyncOnlyFileForm(field: string, files: File | File[]): FormData {
+  const form = fileForm(field, files);
+  form.append(ASYNC_ONLY, "true");
+  return form;
+}
+
 // ── Health ────────────────────────────────────────────────────────────────────
 export const health = () => call<HealthResponse>("api/v1/health");
 
 // ── Parse (single) ────────────────────────────────────────────────────────────
 export const parseResume = (file: File) =>
-  call<ParseResponse>("api/v1/resume/parse", { method: "POST", body: fileForm("file", file) });
+  call<ParseResponse>("api/v1/resume/parse", { method: "POST", body: asyncOnlyFileForm("file", file) });
 
 export const getJobStatus = (jobId: string) =>
   call<JobStatusResponse>(`api/v1/resume/job/${encodeURIComponent(jobId)}`);
@@ -103,7 +117,7 @@ export const getJobStatus = (jobId: string) =>
 export const retryParse = (jobId: string, file: File) =>
   call<RetryResponse>(`api/v1/resume/${encodeURIComponent(jobId)}/retry`, {
     method: "POST",
-    body: fileForm("file", file),
+    body: asyncOnlyFileForm("file", file),
   });
 
 // ── Batch ─────────────────────────────────────────────────────────────────────
@@ -133,7 +147,7 @@ export const createUploadUrl = (filename: string) =>
   call<UploadUrlResponse>("api/v1/resume/upload-url", json({ filename }));
 
 export const parseUploaded = (jobId: string) =>
-  call<ParseResponse>("api/v1/resume/parse-uploaded", json({ job_id: jobId }));
+  call<ParseResponse>("api/v1/resume/parse-uploaded", json({ job_id: jobId, async_only: true }));
 
 // Direct multipart POST to the presigned S3 URL (bypasses the proxy — goes
 // straight to S3). Returns the raw HTTP status; S3 replies 204/201 on success.

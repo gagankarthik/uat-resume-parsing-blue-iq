@@ -9,6 +9,13 @@ import { getSessionClaims } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
+// Amplify Hosting's SSR compute kills any request at a HARD 30s and returns a bare
+// 504 with no body — it is not configurable, there is no quota to raise, and Next's
+// `maxDuration` export is NOT honored on this platform. So bail out just under it and
+// answer with something the console can actually show the user.
+// Refs: aws-amplify/amplify-hosting#3223, #3508.
+const UPSTREAM_TIMEOUT_MS = 27_000;
+
 async function forward(req: NextRequest, path: string[]): Promise<Response> {
   // Require a signed-in session — the server-held API key must never be usable
   // by an unauthenticated caller.
@@ -47,8 +54,18 @@ async function forward(req: NextRequest, path: string[]): Promise<Response> {
 
   let upstream: Response;
   try {
-    upstream = await fetch(target, { method, headers, body });
+    upstream = await fetch(target, { method, headers, body, signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
   } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      // We gave up before Amplify did, so the caller gets an explanation instead of
+      // the platform's bodyless 504. Reaching this means the API held the connection
+      // past its own synchronous budget — it should have promoted the parse to the
+      // async path and returned a poll URL long before now.
+      return Response.json(
+        { error: { detail: `The API did not respond within ${UPSTREAM_TIMEOUT_MS / 1000}s. Try the large-file (upload → poll) flow.` } },
+        { status: 504 },
+      );
+    }
     return Response.json(
       { error: { detail: `Could not reach API at ${target}: ${err instanceof Error ? err.message : String(err)}` } },
       { status: 502 },
