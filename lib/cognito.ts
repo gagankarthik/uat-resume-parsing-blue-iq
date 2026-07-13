@@ -29,6 +29,6 @@ export function signOutLocal(): void {
   try {
     pool().getCurrentUser()?.signOut();
   } catch {
-    /* pool not configured — nothing to clear */
+    /* pool not configured - nothing to clear */
   }
 }

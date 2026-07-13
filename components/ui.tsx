@@ -1,4 +1,4 @@
-// Shared presentational primitives — matched to the Blue-IQ Parser product UI:
+// Shared presentational primitives - matched to the Blue-IQ Parser product UI:
 // cool paper, navy ink, cobalt accent. Pure Tailwind, no external deps.
 "use client";
 
@@ -8,7 +8,7 @@ export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }
 
-/** Brand monogram — a document being parsed into structured lines. */
+/** Brand monogram - a document being parsed into structured lines. */
 export function BrandMark({ className = "h-9 w-9" }: { className?: string }) {
   return (
     <span className={cn("relative grid shrink-0 place-items-center overflow-hidden rounded-[10px] bg-accent-700 text-[var(--surface)] shadow-sm ring-1 ring-black/10", className)}>

@@ -1,4 +1,4 @@
-// Structured, reviewable rendering of a parsed resume — the UAT "did the parser
+// Structured, reviewable rendering of a parsed resume - the UAT "did the parser
 // get it right?" view. Each field is shown plainly so a tester can eyeball the
 // extraction (name without credentials, phone captured, full dates, description
 // as bullets). A raw-JSON toggle is available for exact-value checks.
@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui";
 import type { ConfidenceScores, Experience, ParsedResume, SkillsValidation, SpecialtyMatch } from "@/lib/types";
 
-// Inline SVG icon set (Heroicons-style, stroke=currentColor) — the app ships no
+// Inline SVG icon set (Heroicons-style, stroke=currentColor) - the app ships no
 // icon dependency, so these keep the bundle lean and the CSP strict.
 const ICON_PATHS = {
   user: "M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0",
@@ -57,11 +57,11 @@ function confTone(v: number): "success" | "warning" | "danger" {
   return "danger";
 }
 
-// The API emits MM/DD/YYYY, MM/YYYY, YYYY, or "Present" — preserving whatever
+// The API emits MM/DD/YYYY, MM/YYYY, YYYY, or "Present" - preserving whatever
 // precision the resume stated. Render each nicely; never invent a missing part.
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
+  if (!d) return "-";
   if (d.toLowerCase() === "present") return "Present";
   let m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d); // MM/DD/YYYY
   if (m) return `${MONTHS[Number(m[1]) - 1] ?? m[1]} ${Number(m[2])}, ${m[3]}`;
@@ -75,7 +75,7 @@ function Field({ label, value }: { label: string; value: string | null | undefin
     <div>
       <dt className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</dt>
       <dd className={value ? "text-sm text-zinc-900 dark:text-zinc-100" : "text-sm text-zinc-400"}>
-        {value || "— not captured —"}
+        {value || "- not captured -"}
       </dd>
     </div>
   );
@@ -119,13 +119,13 @@ function Section({
   );
 }
 
-// Compact key/value grid for the optional "Edit Work History" fields — only the
+// Compact key/value grid for the optional "Edit Work History" fields - only the
 // values the parser actually captured are shown.
 function WorkDetails({ e }: { e: Experience }) {
   const professionId =
     e.profession_id != null
       ? `#${e.profession_id}${
-          typeof e.profession_confidence === "number" ? ` · ${e.profession_confidence.toFixed(2)}` : ""
+          typeof e.profession_confidence === "number" ? ` - ${e.profession_confidence.toFixed(2)}` : ""
         }`
       : null;
   const facilityId = e.facility_id != null ? `#${e.facility_id}` : null;
@@ -166,7 +166,7 @@ function WorkDetails({ e }: { e: Experience }) {
 }
 
 function Chips({ items, tone = "neutral" }: { items: string[]; tone?: "neutral" | "info" | "success" }) {
-  if (!items.length) return <p className="text-sm text-zinc-400">— none —</p>;
+  if (!items.length) return <p className="text-sm text-zinc-400">- none -</p>;
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((s, i) => (
@@ -183,7 +183,7 @@ function Chips({ items, tone = "neutral" }: { items: string[]; tone?: "neutral" 
 // mapping; an unmatched specialty (no id) is flagged amber for review, not hidden.
 // Tolerates a plain string too, in case of an older API response.
 function SpecialtyChips({ items }: { items: Array<SpecialtyMatch | string> }) {
-  if (!items.length) return <p className="text-sm text-zinc-400">— none —</p>;
+  if (!items.length) return <p className="text-sm text-zinc-400">- none -</p>;
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((raw, i) => {
@@ -192,15 +192,15 @@ function SpecialtyChips({ items }: { items: Array<SpecialtyMatch | string> }) {
         const conf = typeof s.confidence === "number" ? s.confidence : undefined;
         return (
           <Badge key={`${s.name}-${i}`} tone={matched ? "info" : "warning"}>
-            {s.name || "—"}
+            {s.name || "-"}
             {matched ? (
               <span className="ml-1.5 font-mono text-[10px] opacity-70">
                 #{s.specialty_id}
-                {conf !== undefined ? ` · ${conf.toFixed(2)}` : ""}
-                {s.match_tier ? ` · ${s.match_tier}` : ""}
+                {conf !== undefined ? ` - ${conf.toFixed(2)}` : ""}
+                {s.match_tier ? ` - ${s.match_tier}` : ""}
               </span>
             ) : (
-              <span className="ml-1.5 text-[10px] font-medium opacity-80">· no id · review</span>
+              <span className="ml-1.5 text-[10px] font-medium opacity-80">- no id - review</span>
             )}
           </Badge>
         );
@@ -267,7 +267,7 @@ export function ResumeResult({
           {/* Experience */}
           <Section title="Experience" icon="briefcase" count={data.experience.length} delay={60}>
             {data.experience.length === 0 ? (
-              <p className="text-sm text-zinc-400">— none —</p>
+              <p className="text-sm text-zinc-400">- none -</p>
             ) : (
               <ol className="space-y-3">
                 {data.experience.map((e, i) => (
@@ -277,11 +277,11 @@ export function ResumeResult({
                   >
                     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                       <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {e.role || "—"} <span className="font-normal text-[var(--muted)]">· {e.company || "—"}</span>
+                        {e.role || "-"} <span className="font-normal text-[var(--muted)]">- {e.company || "-"}</span>
                       </p>
                       <p className="font-mono text-xs text-[var(--muted)]">
-                        {fmtDate(e.start_date)} – {fmtDate(e.end_date)}
-                        {e.is_current && <span className="ml-1 font-sans text-accent-600 dark:text-accent-400">· current</span>}
+                        {fmtDate(e.start_date)} - {fmtDate(e.end_date)}
+                        {e.is_current && <span className="ml-1 font-sans text-accent-600 dark:text-accent-400">- current</span>}
                       </p>
                     </div>
                     {e.location && <p className="mt-0.5 text-xs text-zinc-500">{e.location}</p>}
@@ -299,7 +299,7 @@ export function ResumeResult({
                       </ul>
                     )}
                     {e.achievements.length > 0 && (
-                      <ul className="mt-2 list-['✓_'] space-y-1 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
+                      <ul className="mt-2 list-['ok_'] space-y-1 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
                         {e.achievements.map((a, j) => (
                           <li key={j}>{a}</li>
                         ))}
@@ -314,21 +314,21 @@ export function ResumeResult({
           {/* Education */}
           <Section title="Education" icon="education" count={data.education.length} delay={120}>
             {data.education.length === 0 ? (
-              <p className="text-sm text-zinc-400">— none —</p>
+              <p className="text-sm text-zinc-400">- none -</p>
             ) : (
               <ul className="space-y-2">
                 {data.education.map((ed, i) => (
                   <li key={i} className="text-sm">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">{ed.degree || ed.field_of_study || "—"}</span>
-                    <span className="text-zinc-500"> · {ed.institution || "—"}</span>
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">{ed.degree || ed.field_of_study || "-"}</span>
+                    <span className="text-zinc-500"> - {ed.institution || "-"}</span>
                     {(ed.graduation_year || ed.start_year) && (
                       <span className="text-zinc-400">
                         {" "}
-                        ({ed.start_year ? `${ed.start_year}–` : ""}
+                        ({ed.start_year ? `${ed.start_year}-` : ""}
                         {ed.graduation_year ?? ""})
                       </span>
                     )}
-                    {ed.gpa && <span className="text-zinc-400"> · GPA {ed.gpa}</span>}
+                    {ed.gpa && <span className="text-zinc-400"> - GPA {ed.gpa}</span>}
                   </li>
                 ))}
               </ul>
@@ -345,7 +345,7 @@ export function ResumeResult({
                 </span>{" "}
                 recognized in healthcare taxonomy
                 {skillsValidation.unrecognized.length > 0 && (
-                  <> · unrecognized: {skillsValidation.unrecognized.join(", ")}</>
+                  <> - unrecognized: {skillsValidation.unrecognized.join(", ")}</>
                 )}
               </p>
             )}
@@ -358,11 +358,11 @@ export function ResumeResult({
                 {data.certifications.map((c, i) => (
                   <li key={i}>
                     <span className="font-medium text-zinc-900 dark:text-zinc-100">{c.name}</span>
-                    {c.issuer && <span className="text-zinc-500"> · {c.issuer}</span>}
-                    {c.issued_date && <span className="text-zinc-400"> · issued {fmtDate(c.issued_date)}</span>}
-                    {c.expiry_date && <span className="text-zinc-400"> · exp {fmtDate(c.expiry_date)}</span>}
+                    {c.issuer && <span className="text-zinc-500"> - {c.issuer}</span>}
+                    {c.issued_date && <span className="text-zinc-400"> - issued {fmtDate(c.issued_date)}</span>}
+                    {c.expiry_date && <span className="text-zinc-400"> - exp {fmtDate(c.expiry_date)}</span>}
                     {c.date && !c.issued_date && !c.expiry_date && (
-                      <span className="text-zinc-400"> · {fmtDate(c.date)}</span>
+                      <span className="text-zinc-400"> - {fmtDate(c.date)}</span>
                     )}
                   </li>
                 ))}
@@ -384,10 +384,10 @@ export function ResumeResult({
                 {data.references.map((r, i) => (
                   <li key={i}>
                     <span className="font-medium text-zinc-900 dark:text-zinc-100">{r.name}</span>
-                    {r.relationship && <span className="text-zinc-500"> · {r.relationship}</span>}
-                    {r.company && <span className="text-zinc-400"> · {r.company}</span>}
+                    {r.relationship && <span className="text-zinc-500"> - {r.relationship}</span>}
+                    {r.company && <span className="text-zinc-400"> - {r.company}</span>}
                     {(r.email || r.phone) && (
-                      <span className="text-zinc-400"> · {[r.email, r.phone].filter(Boolean).join(" / ")}</span>
+                      <span className="text-zinc-400"> - {[r.email, r.phone].filter(Boolean).join(" / ")}</span>
                     )}
                   </li>
                 ))}
@@ -435,7 +435,7 @@ export function ResumeResult({
                         {n.field}
                       </code>
                       <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
-                        {n.value === null ? "left null" : `= ${n.value}`} · conf{" "}
+                        {n.value === null ? "left null" : `= ${n.value}`} - conf{" "}
                         {n.confidence.toFixed(2)}
                       </span>
                     </div>

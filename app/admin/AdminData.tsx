@@ -25,7 +25,7 @@ interface TableSummary extends TableRef {
 }
 
 function cellText(v: unknown): string {
-  if (v == null) return "—";
+  if (v == null) return "-";
   if (typeof v === "object") return Array.isArray(v) ? `[${v.length}]` : JSON.stringify(v);
   return String(v);
 }
@@ -86,7 +86,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
     return items.filter((it) => JSON.stringify(it).toLowerCase().includes(q));
   }, [items, query]);
 
-  // Union of top-level keys across items → table columns (id-ish keys first).
+  // Union of top-level keys across items -> table columns (id-ish keys first).
   const columns = useMemo(() => {
     const seen = new Set<string>();
     for (const it of items) for (const k of Object.keys(it)) seen.add(k);
@@ -104,7 +104,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
     <div className="w-full">
       {/* Header */}
       <div className="mb-6">
-        <span className="label-caps text-accent-700">Admin · DynamoDB</span>
+        <span className="label-caps text-accent-700">Admin - DynamoDB</span>
         <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-ink">Data viewer</h1>
         <p className="mt-1.5 text-sm text-ink-soft">
           Live contents of the resume-parser tables (region us-east-2). Read-only. Signed in as {email}.
@@ -124,7 +124,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
           >
             <p className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-soft">{t.label}</p>
             <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">
-              {(t as TableSummary).count >= 0 ? (t as TableSummary).count.toLocaleString() : "…"}
+              {(t as TableSummary).count >= 0 ? (t as TableSummary).count.toLocaleString() : "..."}
             </p>
             {"ok" in t && !(t as TableSummary).ok && <p className="text-[10px] text-red-600">unreachable</p>}
           </button>
@@ -153,12 +153,12 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
         {data && (
           <span className="text-sm text-ink-soft">
             <span className="font-mono font-semibold text-ink">{data.count}</span> items
-            {data.truncated && <span className="ml-1 text-amber-600"> · truncated at 300</span>}
+            {data.truncated && <span className="ml-1 text-amber-600"> - truncated at 300</span>}
             <span className="ml-2 font-mono text-xs text-ink-soft/70">{data.name}</span>
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter…" className="h-9 w-44" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter..." className="h-9 w-44" />
           <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => setRaw((v) => !v)}>
             {raw ? "Table" : "Raw JSON"}
           </Button>

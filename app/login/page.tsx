@@ -54,7 +54,7 @@ export default function LoginPage() {
           </Button>
         </form>
         <p className="mt-4 text-xs text-ink-soft">
-          Internal tool — accounts are managed in the Blue-IQ Cognito pool. Contact an admin for access.
+          Internal tool - accounts are managed in the Blue-IQ Cognito pool. Contact an admin for access.
         </p>
       </Card>
     </div>

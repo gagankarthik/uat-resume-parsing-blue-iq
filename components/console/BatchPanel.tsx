@@ -18,7 +18,7 @@ import { CopyButton, Dropzone, EndpointHeader, JsonBlock, StatusPill, humanSize 
 // One accepted file, paired with whatever the job endpoint has returned for it so far.
 type FileResult = { job: BatchJob; res: CallResult<JobStatusResponse> | null };
 
-// A row in the left-hand list. Skipped files are shown too — they were part of the
+// A row in the left-hand list. Skipped files are shown too - they were part of the
 // submission, and a console that silently omits them is lying about what you sent.
 type Row =
   | { kind: "job"; key: string; filename: string; result: FileResult }
@@ -62,8 +62,8 @@ export function BatchPanel() {
   /**
    * Poll the batch until every file is terminal.
    *
-   * Each résumé's result is fetched and shown AS IT LANDS, rather than waiting for the
-   * whole batch to settle — on a 50-file batch that is the difference between a blank
+   * Each resume's result is fetched and shown AS IT LANDS, rather than waiting for the
+   * whole batch to settle - on a 50-file batch that is the difference between a blank
    * panel for two minutes and a list that fills in front of you. Only jobs that are
    * still running get re-fetched each tick, so a finished batch stops costing requests.
    */
@@ -138,7 +138,7 @@ export function BatchPanel() {
     return q ? rows.filter((r) => r.filename.toLowerCase().includes(q)) : rows;
   }, [rows, filter]);
 
-  // The detail pane defaults to the first résumé that has data, so it is never empty
+  // The detail pane defaults to the first resume that has data, so it is never empty
   // while results stream in. This is DERIVED, not stored: setting it from an effect
   // would be a cascading render (React 19 rejects setState-in-effect outright), and
   // storing a default the user has not chosen means a later click can't override it.
@@ -156,7 +156,7 @@ export function BatchPanel() {
         method="POST"
         path="/api/v1/resume/batch"
         title="Batch parse"
-        blurb="Upload many résumés at once. The API accepts them, returns a batch ID and a job ID per file, and parses asynchronously. Every file appears in the list below and fills in as it finishes — pick one to inspect its parsed record or raw JSON."
+        blurb="Upload many resumes at once. The API accepts them, returns a batch ID and a job ID per file, and parses asynchronously. Every file appears in the list below and fills in as it finishes - pick one to inspect its parsed record or raw JSON."
       />
 
       {files.length === 0 && !submit ? (
@@ -196,7 +196,7 @@ export function BatchPanel() {
           </ul>
           <div className="mt-4">
             <Button onClick={submitBatch} loading={submitting}>
-              {submitting ? "Submitting…" : `Submit ${files.length} file${files.length > 1 ? "s" : ""}`}
+              {submitting ? "Submitting..." : `Submit ${files.length} file${files.length > 1 ? "s" : ""}`}
             </Button>
           </div>
         </div>
@@ -247,7 +247,7 @@ export function BatchPanel() {
                       {st.status}
                     </span>
                     <span className="font-mono">
-                      {done}/{st.total} · {st.failed} failed
+                      {done}/{st.total} - {st.failed} failed
                     </span>
                   </div>
                   <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--line)]">
@@ -265,7 +265,7 @@ export function BatchPanel() {
             </div>
           </div>
 
-          {/* Master–detail: every résumé on the left, the selected one on the right. */}
+          {/* Master-detail: every resume on the left, the selected one on the right. */}
           {rows.length > 0 && (
             <div className="grid gap-4 lg:grid-cols-[minmax(15rem,20rem)_1fr]">
               <FileList
@@ -288,7 +288,7 @@ export function BatchPanel() {
   );
 }
 
-/** Left rail — every file in the submission, with its live status. */
+/** Left rail - every file in the submission, with its live status. */
 function FileList({
   rows,
   total,
@@ -310,7 +310,7 @@ function FileList({
         <input
           value={filter}
           onChange={(e) => onFilter(e.target.value)}
-          placeholder={`Filter ${total} file${total > 1 ? "s" : ""}…`}
+          placeholder={`Filter ${total} file${total > 1 ? "s" : ""}...`}
           className="w-full rounded-lg border border-[var(--line)] bg-[var(--bg)]/60 px-3 py-1.5 text-sm outline-none placeholder:text-[var(--muted)] focus:border-accent-500"
         />
       </div>
@@ -364,9 +364,9 @@ function FileList({
                   <JobBadge status={jobStatus} />
                 </div>
                 <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">
-                  {name ? `${name}${roles ? ` · ${roles} role${roles > 1 ? "s" : ""}` : ""}` : "—"}
+                  {name ? `${name}${roles ? ` - ${roles} role${roles > 1 ? "s" : ""}` : ""}` : "-"}
                   {job?.partial && (
-                    <span className="ml-1 text-amber-600 dark:text-amber-400">· needs review</span>
+                    <span className="ml-1 text-amber-600 dark:text-amber-400">- needs review</span>
                   )}
                 </p>
               </button>
@@ -378,7 +378,7 @@ function FileList({
   );
 }
 
-/** Right pane — the selected résumé, as a parsed record or as raw JSON. */
+/** Right pane - the selected resume, as a parsed record or as raw JSON. */
 function DetailPane({
   result,
   view,
@@ -426,7 +426,7 @@ function DetailPane({
           <div className="flex min-h-[16rem] items-center justify-center">
             <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent-500" />
-              Parsing…
+              Parsing...
             </p>
           </div>
         ) : view === "json" ? (
@@ -436,7 +436,7 @@ function DetailPane({
             {job?.partial && job.warnings?.length > 0 && (
               <div className="mb-4 rounded-xl border border-amber-300/60 bg-amber-50/70 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/30">
                 <p className="mb-1 font-medium text-amber-700 dark:text-amber-300">
-                  Degraded parse — needs review
+                  Degraded parse - needs review
                 </p>
                 <ul className="list-inside list-disc space-y-0.5 text-amber-700/90 dark:text-amber-300/90">
                   {job.warnings.map((w, i) => (

@@ -39,11 +39,11 @@ export interface Experience {
   employer_phone?: string | null;
   // Clinical classification
   profession?: string | null;
-  // Platform profession id mapped from `profession` (e.g. RN → "1"), with the
+  // Platform profession id mapped from `profession` (e.g. RN -> "1"), with the
   // system's confidence it is correct (1.0 on an exact catalog match).
   profession_id?: string | null;
   profession_confidence?: number;
-  // Facility mapping — reserved; populated once the client's facilities dataset is
+  // Facility mapping - reserved; populated once the client's facilities dataset is
   // wired. Null / 0.0 until then.
   facility_id?: string | null;
   facility_confidence?: number;
@@ -72,7 +72,7 @@ export interface Experience {
   achievements: string[];
 }
 
-// A student clinical rotation / practicum — kept separate from paid experience.
+// A student clinical rotation / practicum - kept separate from paid experience.
 export interface ClinicalRotation {
   institution: string | null;
   unit: string | null;
@@ -83,7 +83,7 @@ export interface ClinicalRotation {
   description: string[];
 }
 
-// Compliance disclosures scanned from the résumé + a rollup risk flag.
+// Compliance disclosures scanned from the resume + a rollup risk flag.
 export interface ComplianceInfo {
   covid_vaccination: boolean | null;
   tb_test: boolean | null;
@@ -125,7 +125,7 @@ export interface Project {
   url: string | null;
 }
 
-// An explainable extraction decision — why a value was assigned or (more often)
+// An explainable extraction decision - why a value was assigned or (more often)
 // deliberately left null. Lets a reviewer see the parser's reasoning (e.g. a bed
 // count that couldn't be tied to one of several facilities) and correct it via
 // feedback rather than wonder why it's missing.
@@ -173,7 +173,7 @@ export interface SkillsValidation {
 
 // "partial" is a terminal success-with-caveats state: parsing degraded (e.g. the
 // AI step timed out) so `data` holds only what could be recovered and `warnings`
-// explains what needs human review. It is NOT "completed" — never treat it as a
+// explains what needs human review. It is NOT "completed" - never treat it as a
 // clean parse.
 export type JobStatus = "pending" | "processing" | "completed" | "partial" | "failed";
 
@@ -203,7 +203,7 @@ export interface RetryResponse extends ParseResponse {
   retry_count: number;
 }
 
-// ── Batch ─────────────────────────────────────────────────────────────────────
+// -- Batch ---------------------------------------------------------------------
 export interface BatchSkipped {
   filename: string;
   reason: string;
@@ -235,7 +235,7 @@ export interface BatchStatusResponse {
   completed_at: string | null;
 }
 
-// ── Feedback ──────────────────────────────────────────────────────────────────
+// -- Feedback ------------------------------------------------------------------
 export interface FeedbackResponse {
   feedback_id: string;
   job_id: string;
@@ -245,7 +245,7 @@ export interface FeedbackResponse {
   created_at: string;
 }
 
-// ── Webhooks ──────────────────────────────────────────────────────────────────
+// -- Webhooks ------------------------------------------------------------------
 export type WebhookEvent = "parse.completed" | "parse.failed" | "batch.completed";
 export const WEBHOOK_EVENTS: WebhookEvent[] = ["parse.completed", "parse.failed", "batch.completed"];
 export interface WebhookResponse {
@@ -257,7 +257,7 @@ export interface WebhookResponse {
   created_at: string;
 }
 
-// ── Health ────────────────────────────────────────────────────────────────────
+// -- Health --------------------------------------------------------------------
 export interface HealthResponse {
   status: string; // ok | degraded
   version: string;
@@ -266,7 +266,7 @@ export interface HealthResponse {
   dependencies?: Record<string, string> | null;
 }
 
-// ── Large-file upload (presigned) ─────────────────────────────────────────────
+// -- Large-file upload (presigned) ---------------------------------------------
 export interface UploadUrlResponse {
   job_id: string;
   upload_url: string;
