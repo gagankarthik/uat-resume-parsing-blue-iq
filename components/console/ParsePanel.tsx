@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ResumeResult } from "@/components/ResumeResult";
 import { Button } from "@/components/ui";

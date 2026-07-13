@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button, Input, Label, cn } from "@/components/ui";
 import { createWebhook, deleteWebhook, listWebhooks } from "@/lib/api";
@@ -15,8 +15,12 @@ export function WebhooksPanel() {
   const [events, setEvents] = useState<string[]>(["parse.completed"]);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const refresh = () => list.run(listWebhooks);
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  // Depend on `run` itself, not on `list`. useCall returns a fresh object every render, so
+  // depending on `list` would rebuild `refresh` each render and re-fire the effect forever.
+  // `run` is a useCallback with no deps, so this is stable and the effect fires once.
+  const { run: runList } = list;
+  const refresh = useCallback(() => runList(listWebhooks), [runList]);
+  useEffect(() => { refresh(); }, [refresh]);
 
   function toggle(ev: string) {
     setEvents((cur) => (cur.includes(ev) ? cur.filter((e) => e !== ev) : [...cur, ev]));

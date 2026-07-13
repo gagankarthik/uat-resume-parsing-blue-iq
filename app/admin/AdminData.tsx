@@ -97,7 +97,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
       .catch(() => {});
   }, []);
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
