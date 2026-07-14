@@ -25,7 +25,7 @@ interface TableSummary extends TableRef {
 }
 
 function cellText(v: unknown): string {
-  if (v == null) return "—";
+  if (v == null) return "-";
   if (typeof v === "object") return Array.isArray(v) ? `[${v.length}]` : JSON.stringify(v);
   return String(v);
 }
@@ -33,7 +33,8 @@ function cellText(v: unknown): string {
 export function AdminData({ tables, email }: { tables: TableRef[]; email: string }) {
   const [active, setActive] = useState(tables[0]?.id ?? "");
   const [summary, setSummary] = useState<TableSummary[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Starts true: the first table is fetched on mount, so we are loading from frame 1.
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<{ code: number; ms: number } | null>(null);
   const [data, setData] = useState<ScanResult | null>(null);
   const [error, setError] = useState("");
@@ -42,10 +43,13 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
   const [raw, setRaw] = useState(false);
 
   const load = useCallback(async (id: string) => {
-    setLoading(true);
-    setError("");
-    setExpanded(null);
     const t0 = performance.now();
+    // Yield before anything can touch state. An async function body runs SYNCHRONOUSLY
+    // up to its first await, and `await fetch(...)` sits inside the try below - so if
+    // fetch() were to throw synchronously, the catch/finally would setState inside the
+    // effect that called us. That is a cascading render, and React 19 rejects it. One
+    // microtask makes every update below provably deferred.
+    await Promise.resolve();
     try {
       const res = await fetch(`/api/admin/dynamo?table=${encodeURIComponent(id)}`);
       const ms = Math.round(performance.now() - t0);
@@ -65,11 +69,25 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
     }
   }, []);
 
+  // Switching tables clears the filter. Done HERE rather than in an effect that
+  // watches `active`: a synchronous setState inside an effect is a cascading render,
+  // which React 19 rejects outright.
+  const selectTable = useCallback((id: string) => {
+    setActive(id);
+    setQuery("");
+    setLoading(true);
+    setError("");
+    setExpanded(null);
+  }, []);
+
   useEffect(() => {
-    if (active) {
-      setQuery("");
-      load(active);
-    }
+    // Fetching on a changed parameter is exactly what an effect is for. The rule fires
+    // because it cannot see through the async boundary into `load` - but `load` awaits
+    // a microtask before touching any state (see above), so every update it makes is
+    // provably deferred and no cascading render is possible. Suppressed at this one
+    // line rather than contorting the data flow around a static analysis limit.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (active) load(active);
   }, [active, load]);
 
   useEffect(() => {
@@ -79,14 +97,14 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
       .catch(() => {});
   }, []);
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
     return items.filter((it) => JSON.stringify(it).toLowerCase().includes(q));
   }, [items, query]);
 
-  // Union of top-level keys across items → table columns (id-ish keys first).
+  // Union of top-level keys across items -> table columns (id-ish keys first).
   const columns = useMemo(() => {
     const seen = new Set<string>();
     for (const it of items) for (const k of Object.keys(it)) seen.add(k);
@@ -104,7 +122,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
     <div className="w-full">
       {/* Header */}
       <div className="mb-6">
-        <span className="label-caps text-accent-700">Admin · DynamoDB</span>
+        <span className="label-caps text-accent-700">Admin - DynamoDB</span>
         <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-ink">Data viewer</h1>
         <p className="mt-1.5 text-sm text-ink-soft">
           Live contents of the resume-parser tables (region us-east-2). Read-only. Signed in as {email}.
@@ -116,7 +134,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
         {(summary ?? tables.map((t) => ({ ...t, count: -1, sizeBytes: 0, ok: true }))).map((t) => (
           <button
             key={t.id}
-            onClick={() => setActive(t.id)}
+            onClick={() => selectTable(t.id)}
             className={cn(
               "rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5",
               active === t.id ? "border-accent-300 bg-accent-50 shadow-sm" : "border-line bg-surface hover:border-accent-200",
@@ -124,7 +142,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
           >
             <p className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-soft">{t.label}</p>
             <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">
-              {(t as TableSummary).count >= 0 ? (t as TableSummary).count.toLocaleString() : "…"}
+              {(t as TableSummary).count >= 0 ? (t as TableSummary).count.toLocaleString() : "..."}
             </p>
             {"ok" in t && !(t as TableSummary).ok && <p className="text-[10px] text-red-600">unreachable</p>}
           </button>
@@ -136,7 +154,7 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
         {tables.map((t) => (
           <button
             key={t.id}
-            onClick={() => setActive(t.id)}
+            onClick={() => selectTable(t.id)}
             className={cn(
               "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
               active === t.id ? "border-accent-500 bg-accent-50 text-accent-700" : "border-line text-ink-soft hover:border-accent-300 hover:text-ink",
@@ -153,12 +171,12 @@ export function AdminData({ tables, email }: { tables: TableRef[]; email: string
         {data && (
           <span className="text-sm text-ink-soft">
             <span className="font-mono font-semibold text-ink">{data.count}</span> items
-            {data.truncated && <span className="ml-1 text-amber-600"> · truncated at 300</span>}
+            {data.truncated && <span className="ml-1 text-amber-600"> - truncated at 300</span>}
             <span className="ml-2 font-mono text-xs text-ink-soft/70">{data.name}</span>
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter…" className="h-9 w-44" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter..." className="h-9 w-44" />
           <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => setRaw((v) => !v)}>
             {raw ? "Table" : "Raw JSON"}
           </Button>

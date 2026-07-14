@@ -67,11 +67,11 @@ export function FeedbackPanel() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label>Original JSON</Label>
-          <Textarea value={original} onChange={(e) => setOriginal(e.target.value)} rows={10} placeholder='{ "personal_info": … }' className="font-mono text-xs" />
+          <Textarea value={original} onChange={(e) => setOriginal(e.target.value)} rows={10} placeholder='{ "personal_info": ... }' className="font-mono text-xs" />
         </div>
         <div>
           <Label>Corrected JSON</Label>
-          <Textarea value={updated} onChange={(e) => setUpdated(e.target.value)} rows={10} placeholder='{ "personal_info": … }' className="font-mono text-xs" />
+          <Textarea value={updated} onChange={(e) => setUpdated(e.target.value)} rows={10} placeholder='{ "personal_info": ... }' className="font-mono text-xs" />
         </div>
       </div>
 
@@ -84,14 +84,14 @@ export function FeedbackPanel() {
 
       <div className="mt-5">
         <Button onClick={go} loading={loading} disabled={!jobId.trim() || !original.trim() || !updated.trim()}>
-          {loading ? "Submitting…" : "Submit feedback"}
+          {loading ? "Submitting..." : "Submit feedback"}
         </Button>
       </div>
 
       {fb && (
         <div className="pop-in mt-5 rounded-xl border border-emerald-300/60 bg-emerald-50/70 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/30">
           <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-            Accepted · {fb.changed ? `${fb.changed_fields.length} field${fb.changed_fields.length === 1 ? "" : "s"} changed` : "no changes (positive signal)"}
+            Accepted - {fb.changed ? `${fb.changed_fields.length} field${fb.changed_fields.length === 1 ? "" : "s"} changed` : "no changes (positive signal)"}
           </p>
           {fb.changed_fields.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">

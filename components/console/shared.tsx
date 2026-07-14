@@ -8,7 +8,7 @@ import { useCallback, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/components/ui";
 import type { CallResult } from "@/lib/api";
 
-// ── HTTP method chip ──────────────────────────────────────────────────────────
+// -- HTTP method chip ----------------------------------------------------------
 const METHOD_TONE: Record<string, string> = {
   GET: "text-sky-600 dark:text-sky-400",
   POST: "text-accent-600 dark:text-accent-400",
@@ -20,7 +20,7 @@ export function Method({ m }: { m: string }) {
   return <span className={cn("font-mono text-[11px] font-bold tracking-wide", METHOD_TONE[m] ?? "text-[var(--muted)]")}>{m}</span>;
 }
 
-// ── Status pill (colored by class) + latency ──────────────────────────────────
+// -- Status pill (colored by class) + latency ----------------------------------
 export function StatusPill({ status, ms }: { status: number; ms?: number }) {
   const cls =
     status === 0
@@ -43,7 +43,7 @@ export function StatusPill({ status, ms }: { status: number; ms?: number }) {
   );
 }
 
-// ── Copy button ───────────────────────────────────────────────────────────────
+// -- Copy button ---------------------------------------------------------------
 export function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -55,12 +55,12 @@ export function CopyButton({ text, label = "Copy" }: { text: string; label?: str
       }}
       className="rounded-md border border-[var(--line)] bg-[var(--bg-elev)] px-2.5 py-1 font-mono text-[11px] font-medium text-[var(--muted)] transition-colors hover:border-accent-400 hover:text-accent-600 active:scale-95 dark:hover:text-accent-400"
     >
-      {copied ? "Copied ✓" : label}
+      {copied ? "Copied ok" : label}
     </button>
   );
 }
 
-// ── JSON viewer ───────────────────────────────────────────────────────────────
+// -- JSON viewer ---------------------------------------------------------------
 export function JsonBlock({ value, max = "max-h-[26rem]" }: { value: unknown; max?: string }) {
   const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
   return (
@@ -70,7 +70,7 @@ export function JsonBlock({ value, max = "max-h-[26rem]" }: { value: unknown; ma
   );
 }
 
-// ── Response card — wraps any CallResult ──────────────────────────────────────
+// -- Response card - wraps any CallResult --------------------------------------
 export function ResponseCard({
   result,
   title = "Response",
@@ -108,7 +108,7 @@ export function ResponseCard({
   );
 }
 
-// ── Reusable dropzone ─────────────────────────────────────────────────────────
+// -- Reusable dropzone ---------------------------------------------------------
 export function Dropzone({
   accept,
   multiple = false,
@@ -166,14 +166,14 @@ export function Dropzone({
       </p>
       <p className="mt-1 text-sm text-[var(--muted)]">
         or <span className="font-medium text-accent-600 group-hover:underline dark:text-accent-400">browse</span>
-        {hint ? ` · ${hint}` : ""}
+        {hint ? ` - ${hint}` : ""}
       </p>
       <input ref={inputRef} type="file" accept={accept} multiple={multiple} className="hidden" onChange={(e) => emit(e.target.files)} />
     </div>
   );
 }
 
-// ── Endpoint header shown at the top of every panel ───────────────────────────
+// -- Endpoint header shown at the top of every panel ---------------------------
 export function EndpointHeader({ method, path, title, blurb }: { method: string; path: string; title: string; blurb: string }) {
   return (
     <div className="mb-6">
@@ -189,7 +189,7 @@ export function EndpointHeader({ method, path, title, blurb }: { method: string;
   );
 }
 
-// ── Tiny hook: run a CallResult-returning fn with loading state ────────────────
+// -- Tiny hook: run a CallResult-returning fn with loading state ----------------
 export function useCall<T>() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CallResult<T> | null>(null);

@@ -14,9 +14,9 @@ type StepState = "idle" | "running" | "ok" | "error";
 interface Step { label: string; state: StepState; detail?: string }
 
 const START: Step[] = [
-  { label: "POST /resume/upload-url — request presigned URL", state: "idle" },
-  { label: "PUT → S3 — upload file directly", state: "idle" },
-  { label: "POST /resume/parse-uploaded — parse", state: "idle" },
+  { label: "POST /resume/upload-url - request presigned URL", state: "idle" },
+  { label: "PUT -> S3 - upload file directly", state: "idle" },
+  { label: "POST /resume/parse-uploaded - parse", state: "idle" },
 ];
 
 export function LargeFilePanel() {
@@ -42,13 +42,13 @@ export function LargeFilePanel() {
       const p = await createUploadUrl(f.name);
       if (!p.ok || !p.data) { set(0, "error", p.error ?? "failed"); return; }
       setPresign(p.data);
-      set(0, "ok", `${p.status} · ${p.ms} ms · job ${p.data.job_id.slice(0, 8)}…`);
+      set(0, "ok", `${p.status} - ${p.ms} ms - job ${p.data.job_id.slice(0, 8)}...`);
 
       // 2) direct S3 upload
       set(1, "running");
       const up = await uploadToS3(p.data.upload_url, p.data.fields, f);
       if (!up.ok) { set(1, "error", up.error ?? `S3 ${up.status}`); return; }
-      set(1, "ok", `${up.status} · ${up.ms} ms`);
+      set(1, "ok", `${up.status} - ${up.ms} ms`);
 
       // 3) parse-uploaded (+ poll if async)
       set(2, "running");
@@ -63,7 +63,7 @@ export function LargeFilePanel() {
       }
       if (!r.ok) { set(2, "error", r.error ?? "failed"); return; }
       setParsed(r.data);
-      set(2, "ok", `${r.status} · ${r.data?.status}`);
+      set(2, "ok", `${r.status} - ${r.data?.status}`);
     } finally {
       setRunning(false);
     }
@@ -73,14 +73,14 @@ export function LargeFilePanel() {
 
   return (
     <div>
-      <EndpointHeader method="POST" path="/api/v1/resume/upload-url → parse-uploaded" title="Large files (presigned upload)" blurb="For files beyond the ~6 MB request limit: request a presigned S3 URL, upload the file straight to storage, then parse it by job ID. The console runs all three steps for you." />
+      <EndpointHeader method="POST" path="/api/v1/resume/upload-url -> parse-uploaded" title="Large files (presigned upload)" blurb="For files beyond the ~6 MB request limit: request a presigned S3 URL, upload the file straight to storage, then parse it by job ID. The console runs all three steps for you." />
 
       {!running && !file && <Dropzone accept=".pdf,.docx,.rtf,.png,.jpg,.jpeg,.tiff,.tif,.webp" onFiles={(fs) => run(fs[0])} hint="large files supported" />}
 
       {file && (
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--bg-elev)]/70 p-5 backdrop-blur">
           <div className="mb-4 flex items-center justify-between">
-            <p className="truncate text-sm font-medium">{file.name} <span className="font-mono text-xs text-[var(--muted)]">· {humanSize(file.size)}</span></p>
+            <p className="truncate text-sm font-medium">{file.name} <span className="font-mono text-xs text-[var(--muted)]">- {humanSize(file.size)}</span></p>
             {!running && <button onClick={() => { setFile(null); setSteps(START); setParsed(null); setPresign(null); }} className="text-xs text-[var(--muted)] hover:text-accent-600 dark:hover:text-accent-400">Start over</button>}
           </div>
           <ol className="space-y-2.5">
@@ -93,7 +93,7 @@ export function LargeFilePanel() {
                   s.state === "error" ? "border-red-500 bg-red-500 text-white" :
                   "border-[var(--line)] text-[var(--muted)]",
                 )}>
-                  {s.state === "ok" ? "✓" : s.state === "error" ? "!" : s.state === "running" ? <span className="h-2 w-2 animate-ping rounded-full bg-accent-500" /> : i + 1}
+                  {s.state === "ok" ? "ok" : s.state === "error" ? "!" : s.state === "running" ? <span className="h-2 w-2 animate-ping rounded-full bg-accent-500" /> : i + 1}
                 </span>
                 <div className="min-w-0">
                   <p className={cn("text-sm", s.state === "idle" ? "text-[var(--muted)]" : "text-[var(--fg)]")}>{s.label}</p>
@@ -104,7 +104,7 @@ export function LargeFilePanel() {
           </ol>
           {steps[1].state === "error" && (
             <p className="mt-4 rounded-lg border border-amber-300/60 bg-amber-50/70 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
-              The direct S3 upload was blocked — this usually means the bucket needs a CORS rule allowing POST from this origin. The presigned URL itself was issued correctly (step 1).
+              The direct S3 upload was blocked - this usually means the bucket needs a CORS rule allowing POST from this origin. The presigned URL itself was issued correctly (step 1).
             </p>
           )}
         </div>

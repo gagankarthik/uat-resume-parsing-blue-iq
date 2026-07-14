@@ -34,7 +34,7 @@ export function UserMenu({ email, admin }: { email: string; admin: boolean }) {
         disabled={busy}
         className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:bg-black/[0.04] hover:text-ink disabled:opacity-50"
       >
-        {busy ? "Signing out…" : "Sign out"}
+        {busy ? "Signing out..." : "Sign out"}
       </button>
     </div>
   );

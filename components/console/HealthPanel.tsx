@@ -25,7 +25,7 @@ export function HealthPanel() {
       <EndpointHeader method="GET" path="/api/v1/health" title="Health check" blurb="Liveness probe with per-dependency status (DynamoDB, S3) and round-trip latency. No auth required." />
 
       <Button onClick={go} loading={loading}>
-        {loading ? "Checking…" : "Run health check"}
+        {loading ? "Checking..." : "Run health check"}
       </Button>
 
       {h && (
@@ -33,7 +33,7 @@ export function HealthPanel() {
           <Stat label="Status" value={h.status} good={h.status === "ok"} />
           <Stat label="Version" value={h.version} />
           <Stat label="Environment" value={h.environment} />
-          <Stat label="Latency" value={h.latency_ms != null ? `${h.latency_ms} ms` : "—"} />
+          <Stat label="Latency" value={h.latency_ms != null ? `${h.latency_ms} ms` : "-"} />
           {h.dependencies &&
             Object.entries(h.dependencies).map(([k, v]) => <Stat key={k} label={k} value={String(v)} good={v === "ok"} />)}
         </div>

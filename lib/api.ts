@@ -4,7 +4,7 @@
 // browser never sees or sends them.
 //
 // Every call returns a CallResult carrying the HTTP status and round-trip latency
-// so the console can render a real request/response panel — it never throws for a
+// so the console can render a real request/response panel - it never throws for a
 // non-2xx response (that's expected, testable output), only surfaces it.
 
 import {
@@ -91,10 +91,10 @@ function fileForm(field: string, files: File | File[]): FormData {
 }
 
 // Every call here goes through /api/proxy, a Next.js route handler on Amplify
-// Hosting — whose SSR compute hard-kills any request at 30s and returns a bodyless
+// Hosting - whose SSR compute hard-kills any request at 30s and returns a bodyless
 // 504 (not configurable; `maxDuration` is not honored there). A complete parse does
-// not fit that window: a typical résumé's AI pass alone measures ~20s. So the
-// console NEVER asks the API to parse synchronously — it sends `async_only`, gets a
+// not fit that window: a typical resume's AI pass alone measures ~20s. So the
+// console NEVER asks the API to parse synchronously - it sends `async_only`, gets a
 // job id straight back, and polls. Dropping this flag re-introduces the 504.
 const ASYNC_ONLY = "async_only";
 
@@ -104,10 +104,10 @@ function asyncOnlyFileForm(field: string, files: File | File[]): FormData {
   return form;
 }
 
-// ── Health ────────────────────────────────────────────────────────────────────
+// -- Health --------------------------------------------------------------------
 export const health = () => call<HealthResponse>("api/v1/health");
 
-// ── Parse (single) ────────────────────────────────────────────────────────────
+// -- Parse (single) ------------------------------------------------------------
 export const parseResume = (file: File) =>
   call<ParseResponse>("api/v1/resume/parse", { method: "POST", body: asyncOnlyFileForm("file", file) });
 
@@ -120,20 +120,20 @@ export const retryParse = (jobId: string, file: File) =>
     body: asyncOnlyFileForm("file", file),
   });
 
-// ── Batch ─────────────────────────────────────────────────────────────────────
+// -- Batch ---------------------------------------------------------------------
 export const batchParse = (files: File[]) =>
   call<BatchSubmitResponse>("api/v1/resume/batch", { method: "POST", body: fileForm("files", files) });
 
 export const getBatchStatus = (batchId: string) =>
   call<BatchStatusResponse>(`api/v1/resume/batch/${encodeURIComponent(batchId)}`);
 
-// ── Feedback ──────────────────────────────────────────────────────────────────
+// -- Feedback ------------------------------------------------------------------
 export const submitFeedback = (
   jobId: string,
   payload: { original: ParsedResume; updated: ParsedResume; changed?: boolean; notes?: string; profile_id?: string },
 ) => call<FeedbackResponse>(`api/v1/resume/${encodeURIComponent(jobId)}/feedback`, json(payload));
 
-// ── Webhooks ──────────────────────────────────────────────────────────────────
+// -- Webhooks ------------------------------------------------------------------
 export const listWebhooks = () => call<WebhookResponse[]>("api/v1/webhooks");
 export const createWebhook = (url: string, events: string[]) =>
   call<WebhookResponse>("api/v1/webhooks", json({ url, events }));
@@ -142,14 +142,14 @@ export const deleteWebhook = (webhookId: string) =>
     method: "DELETE",
   });
 
-// ── Large files (presigned direct-to-S3) ──────────────────────────────────────
+// -- Large files (presigned direct-to-S3) --------------------------------------
 export const createUploadUrl = (filename: string) =>
   call<UploadUrlResponse>("api/v1/resume/upload-url", json({ filename }));
 
 export const parseUploaded = (jobId: string) =>
   call<ParseResponse>("api/v1/resume/parse-uploaded", json({ job_id: jobId, async_only: true }));
 
-// Direct multipart POST to the presigned S3 URL (bypasses the proxy — goes
+// Direct multipart POST to the presigned S3 URL (bypasses the proxy - goes
 // straight to S3). Returns the raw HTTP status; S3 replies 204/201 on success.
 export async function uploadToS3(
   uploadUrl: string,
