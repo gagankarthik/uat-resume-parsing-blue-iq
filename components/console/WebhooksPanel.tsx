@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button, Input, Label, cn } from "@/components/ui";
 import { createWebhook, deleteWebhook, listWebhooks } from "@/lib/api";
@@ -15,8 +15,12 @@ export function WebhooksPanel() {
   const [events, setEvents] = useState<string[]>(["parse.completed"]);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const refresh = () => list.run(listWebhooks);
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  // Depend on `run` itself, not on `list`. useCall returns a fresh object every render, so
+  // depending on `list` would rebuild `refresh` each render and re-fire the effect forever.
+  // `run` is a useCallback with no deps, so this is stable and the effect fires once.
+  const { run: runList } = list;
+  const refresh = useCallback(() => runList(listWebhooks), [runList]);
+  useEffect(() => { refresh(); }, [refresh]);
 
   function toggle(ev: string) {
     setEvents((cur) => (cur.includes(ev) ? cur.filter((e) => e !== ev) : [...cur, ev]));
@@ -61,7 +65,7 @@ export function WebhooksPanel() {
                   on ? "border-accent-500 bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300" : "border-[var(--line)] text-[var(--muted)] hover:border-accent-400",
                 )}
               >
-                {on ? "✓ " : ""}{ev}
+                {on ? "ok " : ""}{ev}
               </button>
             );
           })}
@@ -70,7 +74,7 @@ export function WebhooksPanel() {
 
         {created?.hmac_secret && (
           <div className="pop-in mt-4 rounded-xl border border-amber-300/60 bg-amber-50/70 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">HMAC secret — shown once, store it now</p>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">HMAC secret - shown once, store it now</p>
             <div className="flex items-center gap-2">
               <code className="scroll-fine flex-1 overflow-auto rounded-md bg-white/70 px-2 py-1 font-mono text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{created.hmac_secret}</code>
               <CopyButton text={created.hmac_secret} />
@@ -88,7 +92,7 @@ export function WebhooksPanel() {
             <code className="font-mono text-[13px] text-[var(--muted)]">/api/v1/webhooks</code>
             {list.result && <StatusPill status={list.result.status} ms={list.result.ms} />}
           </div>
-          <button onClick={refresh} className="text-xs font-medium text-accent-600 hover:underline dark:text-accent-400">{list.loading ? "Refreshing…" : "Refresh"}</button>
+          <button onClick={refresh} className="text-xs font-medium text-accent-600 hover:underline dark:text-accent-400">{list.loading ? "Refreshing..." : "Refresh"}</button>
         </div>
 
         {hooks.length === 0 ? (
@@ -107,7 +111,7 @@ export function WebhooksPanel() {
                   </div>
                 </div>
                 <button onClick={() => remove(h.webhook_id)} disabled={deleting === h.webhook_id} className="shrink-0 rounded-md border border-red-300/60 px-2.5 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/40">
-                  {deleting === h.webhook_id ? "Deleting…" : "Delete"}
+                  {deleting === h.webhook_id ? "Deleting..." : "Delete"}
                 </button>
               </li>
             ))}

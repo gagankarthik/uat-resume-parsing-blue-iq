@@ -11,7 +11,7 @@ const sans = Plus_Jakarta_Sans({ variable: "--font-sans", subsets: ["latin"], di
 const mono = IBM_Plex_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Blue-IQ Parser · UAT Console",
+  title: "Blue-IQ Parser - UAT Console",
   description: "Exercise every Resume Parser API endpoint with live requests, status codes, and latency.",
 };
 
@@ -22,7 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <NavBar />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">{children}</main>
         <footer className="mx-auto w-full max-w-6xl px-4 pb-8 pt-4 text-center text-xs text-ink-soft sm:px-6">
-          Blue-IQ Parser · internal UAT console
+          Blue-IQ Parser - internal UAT console
         </footer>
       </body>
     </html>

@@ -33,7 +33,7 @@ export function ParsePanel() {
       const jr = await getJobStatus(jobId);
       if (!jr.ok) return jr as CallResult<Body>;
       const st = jr.data?.status;
-      // Terminal states: "partial" is terminal too (degraded parse — data is
+      // Terminal states: "partial" is terminal too (degraded parse - data is
       // present but flagged for review), so the loop must stop on it or it
       // would poll until timeout.
       if (st === "completed" || st === "partial" || st === "failed")
@@ -84,7 +84,7 @@ export function ParsePanel() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <StatusPill status={result.status} ms={result.ms} />
-              {file && <span className="truncate text-xs text-[var(--muted)]">{file.name} · {humanSize(file.size)}</span>}
+              {file && <span className="truncate text-xs text-[var(--muted)]">{file.name} - {humanSize(file.size)}</span>}
             </div>
             <div className="flex gap-2">
               <CopyButton text={JSON.stringify(result.raw, null, 2)} label="Copy JSON" />
@@ -112,7 +112,7 @@ export function ParsePanel() {
           </details>
         </div>
       ) : (
-        <Dropzone accept={ACCEPT} onFiles={(fs) => run(fs[0])} hint="PDF · DOCX · RTF · PNG · JPG · TIFF · WEBP · up to 10 MB" />
+        <Dropzone accept={ACCEPT} onFiles={(fs) => run(fs[0])} hint="PDF - DOCX - RTF - PNG - JPG - TIFF - WEBP - up to 10 MB" />
       )}
     </div>
   );
