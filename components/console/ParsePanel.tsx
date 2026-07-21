@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ResumeResult } from "@/components/ResumeResult";
 import { Button } from "@/components/ui";
@@ -49,8 +49,15 @@ export function ParsePanel() {
       setStage(0);
       setPhase("parsing");
       let res: CallResult<Body> = await parseResume(f);
-      if (res.ok && res.data?.status === "processing" && res.data.job_id) {
-        res = await poll(res.data.job_id);
+      // Uniform async contract: the submit returns immediately with a job id and
+      // `status: "processing"` (or "pending"), so poll to completion. Stay
+      // backward-tolerant — if a response ever arrives already parsed (inline
+      // `data`), render it directly and skip polling.
+      const b = res.data;
+      const needsPoll =
+        res.ok && !!b?.job_id && b.data == null && (b.status === "processing" || b.status === "pending");
+      if (needsPoll) {
+        res = await poll(b!.job_id);
       }
       setResult(res);
       setPhase("done");
@@ -67,7 +74,7 @@ export function ParsePanel() {
         method="POST"
         path="/api/v1/resume/parse"
         title="Parse a resume"
-        blurb="Upload a single resume. Digital PDF/DOCX/RTF return structured JSON synchronously; scanned PDFs and images return a job that the console polls to completion."
+        blurb="Upload a single resume. The API returns a job immediately; the console polls it to completion and renders the structured JSON."
       />
 
       {phase === "parsing" ? (
