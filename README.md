@@ -73,11 +73,24 @@ spec lives in [`amplify.yml`](./amplify.yml) (Node 20, writes console env vars i
   with the `RESUME_PARSER_API_KEY` as `X-API-Key`, so the browser never makes a
   cross-origin call (no CORS) and never holds the key.
 
+### Parse flow (uniform async: submit → poll)
+
+The parse API is **uniformly asynchronous**. Every submit endpoint — `POST /resume/parse`,
+`POST /resume/parse-uploaded`, `POST /resume/{id}/retry` — returns **immediately** with
+`{ job_id, status: "processing", poll_url }` and never returns parsed `data` inline. The
+console therefore **submits, then polls** `GET /resume/job/{job_id}` every ~2s (capped at a
+few minutes) until the job is `completed`/`partial` (renders `data`) or `failed` (shows
+`error`). The deprecated `async_only` flag is no longer sent (it is ignored upstream). The
+client stays backward-tolerant: if a submit ever comes back already `completed` with inline
+`data`, it renders that directly and skips polling. The `/api/proxy` route forwards each
+submit and each poll as a discrete, fast request — it never holds a connection open for the
+whole parse.
+
 ### Endpoints exercised
 
 | Panel | Endpoint(s) |
 |---|---|
-| Parse resume | `POST /resume/parse` (+ polls `GET /resume/job/{id}` for async) |
+| Parse resume | `POST /resume/parse` → polls `GET /resume/job/{id}` to completion |
 | Batch parse | `POST /resume/batch` (+ polls `GET /resume/batch/{id}`) |
 | Large files | `POST /resume/upload-url` -> direct S3 upload -> `POST /resume/parse-uploaded` |
 | Job status & retry | `GET /resume/job/{id}`, `POST /resume/{id}/retry` |

@@ -50,15 +50,19 @@ export function LargeFilePanel() {
       if (!up.ok) { set(1, "error", up.error ?? `S3 ${up.status}`); return; }
       set(1, "ok", `${up.status} - ${up.ms} ms`);
 
-      // 3) parse-uploaded (+ poll if async)
+      // 3) parse-uploaded (+ poll to completion). Uniform async contract: the
+      // submit returns immediately with `status: "processing"` (or "pending") and
+      // no inline data, so poll until terminal. Backward-tolerant: if it ever
+      // returns already parsed, skip the poll.
       set(2, "running");
       const jobId = p.data.job_id;
       let r: CallResult<ParseResponse | JobStatusResponse> = await parseUploaded(jobId);
-      if (r.ok && r.data?.status === "processing") {
+      if (r.ok && r.data?.data == null && (r.data?.status === "processing" || r.data?.status === "pending")) {
         for (let i = 0; i < 90; i++) {
           await new Promise((res) => setTimeout(res, 2000));
           const jr = await getJobStatus(jobId);
-          if (jr.ok && (jr.data?.status === "completed" || jr.data?.status === "failed")) { r = jr; break; }
+          const st = jr.data?.status;
+          if (jr.ok && (st === "completed" || st === "partial" || st === "failed")) { r = jr; break; }
         }
       }
       if (!r.ok) { set(2, "error", r.error ?? "failed"); return; }
